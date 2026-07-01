@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Math in LLMs — Research Map</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: "Georgia", "Times New Roman", serif;
+  background: #fafaf8;
+  color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+header {
+  flex-shrink: 0;
+  padding: 14px 28px 11px;
+  border-bottom: 1px solid #e0ddd8;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  background: #fafaf8;
+}
+header h1 { font-size: 1rem; font-weight: normal; letter-spacing: 0.02em; }
+.subtitle { font-size: 0.76rem; color: #aaa; font-family: "Courier New", monospace; }
+.badge {
+  font-size: 0.66rem;
+  background: #eee; color: #888;
+  padding: 2px 7px; border-radius: 10px;
+  font-family: "Courier New", monospace;
+}
+
+/* ── LAYOUT ── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── TREE ── */
+.tree-panel {
+  width: 280px;
+  min-width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid #e0ddd8;
+  background: #f5f3ef;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px 0 24px 0;
+}
+#tree-svg { display: block; }
+
+.node { cursor: pointer; }
+.node circle {
+  fill: #f5f3ef;
+  stroke: #aaa9a4;
+  stroke-width: 1.4px;
+  transition: fill 0.1s, stroke 0.1s;
+}
+.node:hover circle { fill: #e8e4dc; stroke: #666; }
+.node.selected circle { fill: #1a1a1a !important; stroke: #1a1a1a !important; }
+.node.selected text { font-weight: bold !important; fill: #000 !important; }
+.link { fill: none; stroke: #d0cdc7; stroke-width: 1.1px; }
+
+/* ── THEORY PANEL ── */
+.theory-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 36px 52px 64px;
+}
+.theory-inner { max-width: 740px; }
+
+.placeholder { color: #bbb; font-size: 0.9rem; text-align: center; margin-top: 110px; }
+
+.theory-panel h2 {
+  font-size: 1.45rem;
+  font-weight: normal;
+  margin-bottom: 7px;
+  letter-spacing: -0.01em;
+}
+.meta {
+  display: flex; gap: 10px; align-items: center;
+  font-size: 0.75rem; color: #999;
+  font-family: "Courier New", monospace;
+  margin-bottom: 22px;
+}
+.type-badge {
+  font-size: 0.63rem; padding: 2px 8px; border-radius: 10px;
+  font-family: "Courier New", monospace;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.type-category   { background: #e8e4dc; color: #666; }
+.type-structure  { background: #dce8e4; color: #3a5a50; }
+.type-hypothesis { background: #e4dce8; color: #5a3a6a; }
+.type-concept    { background: #e8e8dc; color: #5a5a30; }
+
+.summary {
+  font-size: 0.98rem; color: #444; line-height: 1.68;
+  margin-bottom: 22px; padding-bottom: 18px;
+  border-bottom: 1px solid #e8e4dc;
+}
+
+/* ── VISUALIZATION ── */
+.viz-box {
+  background: #f2f0ec;
+  border: 1px solid #e4e0d8;
+  border-radius: 6px;
+  margin: 0 0 26px;
+  overflow: hidden;
+  line-height: 0;
+}
+.viz-box svg { display: block; width: 100%; height: auto; }
+.viz-caption {
+  text-align: center;
+  font-size: 0.76rem; color: #888; font-style: italic;
+  padding: 8px 16px 12px;
+  border-top: 1px solid #e4e0d8;
+  background: #f8f6f2;
+}
+
+/* ── CONTENT ── */
+.content { font-size: 0.91rem; line-height: 1.8; color: #2a2a2a; }
+.content h3 {
+  font-size: 0.93rem; font-weight: bold;
+  margin: 22px 0 7px; letter-spacing: 0.01em;
+}
+.content p { margin-bottom: 10px; }
+.content table {
+  width: 100%; border-collapse: collapse;
+  margin: 12px 0; font-size: 0.86rem;
+}
+.content th {
+  text-align: left; border-bottom: 1.5px solid #ccc;
+  padding: 5px 10px 5px 0; color: #555;
+}
+.content td {
+  padding: 5px 10px 5px 0; border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+.content blockquote {
+  border-left: 3px solid #ddd; padding-left: 15px;
+  color: #666; margin: 10px 0; font-style: italic;
+}
+.math {
+  font-family: "Courier New", monospace;
+  background: #eeebe5; padding: 1px 5px;
+  border-radius: 3px; font-size: 0.87em;
+}
+
+/* ── ENTRIES ── */
+.entries-section {
+  margin-top: 30px; padding-top: 18px;
+  border-top: 1px solid #e8e4dc;
+}
+.entries-section .sec-label {
+  font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: #aaa; margin-bottom: 12px;
+}
+.entry-card {
+  padding: 11px 14px; background: #eeebe5;
+  border-radius: 5px; margin-bottom: 8px;
+}
+.entry-card .et { font-size: 0.87rem; font-weight: bold; margin-bottom: 3px; }
+.entry-card .em {
+  font-size: 0.74rem; color: #888;
+  font-family: "Courier New", monospace;
+}
+.entry-card .ed { font-size: 0.81rem; color: #555; margin-top: 5px; }
+.entry-card a { color: #666; }
+.entry-card a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Math in LLMs</h1>
+  <span class="subtitle">Research Map</span>
+  <span class="badge">v0</span>
+  <button id="lang-btn" onclick="toggleLang()" style="margin-left:auto;font-family:'Courier New',monospace;font-size:0.72rem;background:#e8e4dc;border:none;padding:3px 10px;border-radius:10px;cursor:pointer;color:#555;letter-spacing:0.05em">RU</button>
+</header>
+
+<div class="main">
+  <div class="tree-panel" id="tree-panel">
+    <svg id="tree-svg"></svg>
+  </div>
+  <div class="theory-panel" id="theory-panel">
+    <div class="placeholder">← Select a node to read theory</div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════
+
+const taxonomy = {
+  id: "root", label_en: "Math in LLMs", label_ru: "Матем. в LLM", type: "root",
+  children: [
+    {
+      id: "manifolds",
+      label_en: "Manifolds",      label_ru: "Многообразия",
+      lt_en: "Manifolds",         lt_ru: "Многообразия",
+      type: "category",
+      children: [
+        { id: "manifolds-torus",      label_en: "Torus",              label_ru: "Тор",                    lt_en: "Torus",         lt_ru: "Тор",            type: "structure" },
+        { id: "manifolds-hyperbolic", label_en: "Hyperbolic manifold", label_ru: "Гиперболическое",        lt_en: "Hyperbolic",    lt_ru: "Гиперболич.",    type: "structure" },
+        { id: "manifolds-sphere",     label_en: "Sphere",              label_ru: "Сфера",                  lt_en: "Sphere",        lt_ru: "Сфера",          type: "structure" },
+        { id: "manifolds-affine",     label_en: "Affine subspace",     label_ru: "Аффинное подпр-во",      lt_en: "Affine subsp.", lt_ru: "Аффинное подпр.", type: "structure" },
+      ]
+    },
+    {
+      id: "linear-structures",
+      label_en: "Linear structures", label_ru: "Линейные структуры",
+      lt_en: "Linear structures",    lt_ru: "Линейные структуры",
+      type: "category",
+      children: [
+        { id: "linear-separability", label_en: "Linear separability", label_ru: "Линейная разделимость", lt_en: "Lin. separability", lt_ru: "Лин. разделимость", type: "concept"   },
+        { id: "linear-direction",    label_en: "Linear direction",    label_ru: "Линейное направление",  lt_en: "Lin. direction",    lt_ru: "Лин. направление",  type: "structure" },
+        { id: "linear-subspace",     label_en: "Linear subspace",     label_ru: "Линейное подпр-во",     lt_en: "Lin. subspace",     lt_ru: "Лин. подпр-во",     type: "structure" },
+      ]
+    },
+    {
+      id: "hypotheses",
+      label_en: "Hypotheses", label_ru: "Гипотезы",
+      lt_en: "Hypotheses",    lt_ru: "Гипотезы",
+      type: "category",
+      children: [
+        { id: "lrh",                    label_en: "Linear Representation Hypothesis",   label_ru: "Гипотеза лин. репрезентаций",    lt_en: "LRH",          lt_ru: "ГЛР",           type: "hypothesis" },
+        { id: "platonic-representation", label_en: "Platonic Representation Hypothesis", label_ru: "Гипотеза платонич. репрезентаций", lt_en: "Platonic Rep.", lt_ru: "Платонич. реп.", type: "hypothesis" },
+      ]
+    }
+  ]
+};
+
+const entries = [
+  {
+    id: "gurnee-tegmark-2024",
+    title: "Language Models Represent Space and Time",
+    authors: "Gurnee & Tegmark",
+    year: 2024, arxiv: "2310.02207",
+    node: "manifolds-torus",
+    desc: "LLM кодируют время на торе, пространство на 2D-плоскости. Линейно декодируемо из residual stream Llama-2.",
+    desc_en: "LLMs encode time on a torus and space on a 2D plane, linearly decodable from the residual stream of Llama-2."
+  },
+  {
+    id: "park-etal-2023",
+    title: "The Linear Representation Hypothesis and the Geometry of LLMs",
+    authors: "Park, Choe & Veitch",
+    year: 2023, arxiv: "2311.03658",
+    node: "lrh",
+    desc: "Строгая формулировка LRH; геометрия activation space изоморфна логической структуре понятий.",
+    desc_en: "Rigorous formulation of LRH; shows that the geometry of activation space is isomorphic to the logical structure of concepts."
+  }
+];
+
+// ══════════════════════════════════════════════════════════
+// THEORY CONTENT
+// ══════════════════════════════════════════════════════════
+
+const theory = {
+
+"manifolds": {
+  type: "category", viz: "manifolds",
+  en: {
+    title: "Manifolds",
+    summary: "A topological space in which every point has a neighbourhood homeomorphic to ℝⁿ. LLM activations concentrate on lower-dimensional manifolds rather than filling the ambient space uniformly.",
+    content: `<h3>Definition</h3>
+<p>A <strong>manifold</strong> of dimension <span class="math">n</span> is a topological space in which every point has a neighbourhood homeomorphic to an open ball in <span class="math">ℝⁿ</span>. A pair (neighbourhood, homeomorphism) is a <em>chart</em>; a complete collection of charts is an <em>atlas</em>.</p>
+<blockquote>Earth is a 2-dimensional manifold: locally it looks like a plane (a city map), yet globally it is a sphere.</blockquote>
+<h3>Four types in the LLM context</h3>
+<table>
+<tr><th>Type</th><th>Curvature</th><th>Topology</th><th>Example</th></tr>
+<tr><td>Torus S¹×S¹</td><td>Flat</td><td>Closed, periodic</td><td>Days of week, months</td></tr>
+<tr><td>Hyperbolic</td><td>Negative</td><td>Open, "expanding"</td><td>Semantic hierarchies</td></tr>
+<tr><td>Sphere Sⁿ</td><td>Positive</td><td>Closed, homogeneous</td><td>Normalised activations</td></tr>
+<tr><td>Affine subspace</td><td>Zero</td><td>Open, flat</td><td>Boundary case</td></tr>
+</table>
+<h3>How to detect</h3>
+<p><strong>PCA / UMAP</strong> — reduce dimensionality and inspect the point cloud. <strong>Persistent homology (TDA)</strong> — find topological loops and voids. <strong>Probing</strong> — compare a linear probe with a periodic (sin/cos) probe on the same feature.</p>`
+  },
+  ru: {
+    title: "Многообразия",
+    summary: "Топологическое пространство, локально гомеоморфное ℝⁿ. Активации LLM не заполняют всё пространство равномерно — они концентрируются на многообразиях меньшей размерности.",
+    content: `<h3>Определение</h3>
+<p><strong>Многообразие</strong> размерности <span class="math">n</span> — топологическое пространство, в котором каждая точка имеет окрестность, гомеоморфную открытому шару в <span class="math">ℝⁿ</span>. Пара (окрестность, гомеоморфизм) называется <em>картой</em>; полный набор карт — <em>атласом</em>.</p>
+<blockquote>Земля — 2-мерное многообразие: локально выглядит как плоскость, глобально — сфера.</blockquote>
+<h3>Четыре типа в контексте LLM</h3>
+<table>
+<tr><th>Тип</th><th>Кривизна</th><th>Топология</th><th>Пример</th></tr>
+<tr><td>Тор S¹×S¹</td><td>Плоская</td><td>Замкнутая, периодическая</td><td>Дни недели, месяцы</td></tr>
+<tr><td>Гиперболическое</td><td>Отрицательная</td><td>Открытая, «раздувающаяся»</td><td>Семантические иерархии</td></tr>
+<tr><td>Сфера Sⁿ</td><td>Положительная</td><td>Замкнутая, однородная</td><td>Нормированные активации</td></tr>
+<tr><td>Аффинное подпространство</td><td>Нулевая</td><td>Открытая, плоская</td><td>Граничный случай</td></tr>
+</table>
+<h3>Как обнаружить</h3>
+<p><strong>PCA / UMAP</strong> — снизить размерность и посмотреть на облако точек. <strong>Persistent homology (TDA)</strong> — найти топологические петли и дыры. <strong>Probing</strong> — сравнить линейный и периодический (sin/cos) пробы на одном признаке.</p>`
+  }
+},
+
+"manifolds-torus": {
+  type: "structure", viz: "torus",
+  en: {
+    title: "Torus",
+    summary: "Closed manifold T² = S¹ × S¹. Encodes cyclic structures — days of week, months, hours. Shown to be linearly decodable in Llama-2 (Gurnee & Tegmark, 2024).",
+    content: `<h3>Definition</h3>
+<p>The torus <span class="math">T² = S¹ × S¹</span> is the Cartesian product of two circles, parametrised by angles <span class="math">(θ₁, θ₂) ∈ [0,2π)²</span>. Embedding in <span class="math">ℝ³</span>:</p>
+<p><span class="math">x = (R + r·cos θ₂)·cos θ₁,&nbsp; y = (R + r·cos θ₂)·sin θ₁,&nbsp; z = r·sin θ₂</span></p>
+<blockquote>The surface of a donut. Walk far enough in one direction and you return to where you started.</blockquote>
+<h3>Why a torus for time?</h3>
+<p>Days of the week are cyclic: Sunday wraps back to Monday. Distance on S¹ reflects semantic proximity: Monday and Sunday are close; Monday and Thursday are far. A torus = two independent cycles simultaneously (day of week × time of day).</p>
+<h3>Key evidence</h3>
+<p>Gurnee & Tegmark (2024): the leading principal components of activations mentioning days / months form a torus in the residual stream of Llama-2-7b, 13b, 70b, and Pythia-6.9b. A linear decoder with features <span class="math">sin(2πk/7), cos(2πk/7)</span> achieves >95% accuracy.</p>
+<h3>How to find a torus in activations</h3>
+<p>1. Collect activations on sentences mentioning days of the week. 2. Apply PCA: take the top 2–4 components. 3. Plot a scatter: if points form a ring or torus the structure is present. 4. Confirm via TDA: <span class="math">H₁ = ℤ²</span> (two independent cycles).</p>`
+  },
+  ru: {
+    title: "Тор",
+    summary: "Замкнутое многообразие T² = S¹ × S¹. Кодирует циклические структуры: дни недели, месяцы, часы. Доказано линейно декодируемо в Llama-2 (Gurnee & Tegmark, 2024).",
+    content: `<h3>Определение</h3>
+<p>Тор <span class="math">T² = S¹ × S¹</span> — декартово произведение двух окружностей, параметризованных углами <span class="math">(θ₁, θ₂) ∈ [0,2π)²</span>. Вложение в <span class="math">ℝ³</span>:</p>
+<p><span class="math">x = (R + r·cos θ₂)·cos θ₁,&nbsp; y = (R + r·cos θ₂)·sin θ₁,&nbsp; z = r·sin θ₂</span></p>
+<blockquote>Поверхность бублика. Идти «вправо» достаточно долго — вернёшься на то же место.</blockquote>
+<h3>Почему тор для времени?</h3>
+<p>Дни недели цикличны: после воскресенья идёт понедельник. Расстояние на S¹ отражает семантическую близость: Monday и Sunday близко, Monday и Thursday — далеко. Тор = два независимых цикла одновременно (день недели × время суток).</p>
+<h3>Ключевое свидетельство</h3>
+<p>Gurnee & Tegmark (2024): первые главные компоненты активаций при упоминании дней / месяцев образуют тор в residual stream Llama-2-7b, 13b, 70b, Pythia-6.9b. Линейный декодер с признаками <span class="math">sin(2πk/7), cos(2πk/7)</span> достигает точности >95%.</p>
+<h3>Как найти тор в активациях</h3>
+<p>1. Собрать активации на предложениях с упоминанием дней недели. 2. Применить PCA: взять первые 2–4 компоненты. 3. Построить scatter-plot: если точки образуют кольцо или тор — структура есть. 4. Подтвердить через TDA: <span class="math">H₁ = ℤ²</span> (два независимых цикла).</p>`
+  }
+},
+
+"manifolds-hyperbolic": {
+  type: "structure", viz: "hyperbolic",
+  en: {
+    title: "Hyperbolic manifold",
+    summary: "Manifold of constant negative curvature. Ball volume grows as eʳ — natural for encoding hierarchies with exponential branching.",
+    content: `<h3>Key property: exponential growth</h3>
+<p>In Euclidean space, the volume of a ball of radius <span class="math">r</span> grows as <span class="math">r^n</span>. In hyperbolic space, it grows as <span class="math">e^{(n−1)r}</span>. This means the number of points that fit at distance <span class="math">r</span> from the centre grows exponentially.</p>
+<blockquote>In flat space a tree "sprawls". In hyperbolic space all levels of a hierarchy sit at equal distance from the root and pack compactly.</blockquote>
+<h3>Models of hyperbolic space</h3>
+<p><strong>Poincaré disk</strong>: the open unit disk with metric <span class="math">ds² = 4(dx²+dy²)/(1−r²)²</span>. Geodesics are arcs of circles orthogonal to the boundary. The boundary corresponds to "infinity".</p>
+<p><strong>Upper half-plane</strong>: <span class="math">ℍ = {(x,y): y>0}</span> with metric <span class="math">ds² = (dx²+dy²)/y²</span>. Both models are isometric.</p>
+<h3>Connection to LLMs</h3>
+<p>Hyponymic hierarchies (dog → animal → living being) have tree structure with exponential branching. If the model encodes them in a hyperbolic subspace, "depth in the hierarchy" ≈ distance from the disk's centre.</p>`
+  },
+  ru: {
+    title: "Гиперболическое многообразие",
+    summary: "Многообразие постоянной отрицательной кривизны. Объём шара растёт как eʳ — идеально для кодирования иерархий с экспоненциальным ветвлением.",
+    content: `<h3>Ключевое свойство: экспоненциальный рост</h3>
+<p>В евклидовом пространстве объём шара радиуса <span class="math">r</span> растёт как <span class="math">r^n</span>. В гиперболическом — как <span class="math">e^{(n−1)r}</span>. Это означает, что количество точек, помещающихся на расстоянии <span class="math">r</span> от центра, растёт экспоненциально.</p>
+<blockquote>На плоскости дерево «расползается». В гиперболическом пространстве все уровни иерархии равноудалены от корня и помещаются компактно.</blockquote>
+<h3>Модели гиперболического пространства</h3>
+<p><strong>Диск Пуанкаре</strong>: открытый единичный диск с метрикой <span class="math">ds² = 4(dx²+dy²)/(1−r²)²</span>. Геодезики — дуги окружностей, перпендикулярных границе диска.</p>
+<p><strong>Полуплоскость Лобачевского</strong>: <span class="math">ℍ = {(x,y): y>0}</span> с метрикой <span class="math">ds² = (dx²+dy²)/y²</span>. Обе модели изометричны.</p>
+<h3>Связь с LLM</h3>
+<p>Гипонимические иерархии (собака → животное → живое существо) имеют древовидную структуру с экспоненциальным ветвлением. Если модель кодирует их в гиперболическом подпространстве, то «глубина в иерархии» ≈ расстояние до корня диска.</p>`
+  }
+},
+
+"manifolds-sphere": {
+  type: "structure", viz: "sphere",
+  en: {
+    title: "Sphere",
+    summary: "Closed homogeneous manifold of constant positive curvature. LayerNorm projects all activations onto the unit hypersphere Sⁿ⁻¹.",
+    content: `<h3>Definition</h3>
+<p>The unit <span class="math">n</span>-sphere: <span class="math">Sⁿ = {x ∈ ℝⁿ⁺¹ : ‖x‖ = 1}</span>. For a transformer with hidden dimension <span class="math">d</span> this is the hypersphere <span class="math">S^{d−1} ⊂ ℝ^d</span>.</p>
+<h3>LayerNorm and the sphere</h3>
+<p>LayerNorm normalises activations: <span class="math">x̂ = (x − μ)/σ</span>, then rescales via learned parameters. After normalisation the vector lies on a (rescaled) hypersphere, creating a structural bias: distances between activations are governed by cosine similarity rather than Euclidean distance.</p>
+<h3>Empirical status</h3>
+<p>Direct evidence of semantically meaningful structures specifically on the sphere is limited. However, cosine similarity as the standard embedding metric implicitly exploits spherical geometry. An open area for research.</p>
+<h3>Contrast with the torus</h3>
+<p>The torus cannot be embedded in <span class="math">ℝ²</span> without self-intersection; the sphere embeds in <span class="math">ℝ³</span>. Topology: <span class="math">π₁(S²) = 0</span> (no non-trivial loops), <span class="math">π₁(T²) = ℤ²</span>.</p>`
+  },
+  ru: {
+    title: "Сфера / гиперсфера",
+    summary: "Замкнутое однородное многообразие постоянной положительной кривизны. LayerNorm проецирует все активации на единичную гиперсферу Sⁿ⁻¹.",
+    content: `<h3>Определение</h3>
+<p>Единичная <span class="math">n</span>-сфера: <span class="math">Sⁿ = {x ∈ ℝⁿ⁺¹ : ‖x‖ = 1}</span>. Для активаций трансформера размерности <span class="math">d</span> — гиперсфера <span class="math">S^{d−1} ⊂ ℝ^d</span>.</p>
+<h3>LayerNorm и сфера</h3>
+<p>LayerNorm нормирует активации: <span class="math">x̂ = (x − μ)/σ</span>, затем масштабирует через обучаемые параметры. После нормализации вектор лежит на (масштабированной) гиперсфере: расстояния определяются косинусным сходством, а не евклидовым.</p>
+<h3>Эмпирические свидетельства</h3>
+<p>Прямых свидетельств «семантических» структур именно на сфере в LLM пока мало. Но косинусное сходство как стандартная метрика косвенно использует сферическую геометрию. Открытая область для исследований.</p>
+<h3>Отличие от тора</h3>
+<p>Тор не вкладывается в <span class="math">ℝ²</span> без самопересечений. Сфера — вкладывается в <span class="math">ℝ³</span>. Топология: <span class="math">π₁(S²) = 0</span>, <span class="math">π₁(T²) = ℤ²</span>.</p>`
+  }
+},
+
+"manifolds-affine": {
+  type: "structure", viz: "affine",
+  en: {
+    title: "Affine subspace",
+    summary: "Linear subspace with an offset: A = x₀ + V. Flat, open manifold of zero curvature. Unlike a linear subspace, need not pass through the origin.",
+    content: `<h3>Definition</h3>
+<p>An affine subspace: <span class="math">A = x₀ + V = {x₀ + v : v ∈ V}</span>, where <span class="math">V ⊂ ℝ^d</span> is a linear subspace and <span class="math">x₀</span> is an offset point. The dimension of <span class="math">A</span> equals the dimension of <span class="math">V</span>.</p>
+<blockquote>A line not passing through the origin is a 1-dimensional affine subspace.</blockquote>
+<h3>Difference from a linear subspace</h3>
+<p>A linear subspace must contain <span class="math">0</span>; an affine subspace need not. In LLMs this matters: concept representations are often not centred at the zero vector.</p>
+<h3>Connection to LLMs</h3>
+<p>When an activation cloud for some class (e.g. proper nouns) has linear structure but does not pass through the origin, that cloud is an affine subspace. Parallel affine subspaces (same <span class="math">V</span>, different <span class="math">x₀</span>) correspond to concepts of the same "type" in different "contexts".</p>`
+  },
+  ru: {
+    title: "Аффинное подпространство",
+    summary: "Линейное подпространство со сдвигом: A = x₀ + V. Плоское, незамкнутое многообразие нулевой кривизны. Не обязано проходить через начало координат.",
+    content: `<h3>Определение</h3>
+<p>Аффинное подпространство: <span class="math">A = x₀ + V = {x₀ + v : v ∈ V}</span>, где <span class="math">V ⊂ ℝ^d</span> — линейное подпространство, <span class="math">x₀</span> — точка сдвига.</p>
+<blockquote>Прямая, не проходящая через начало координат — аффинное подпространство размерности 1.</blockquote>
+<h3>Отличие от линейного подпространства</h3>
+<p>Линейное подпространство обязано содержать <span class="math">0</span>. Аффинное — нет. В контексте LLM это важно: репрезентации концептов часто не центрированы вокруг нулевого вектора.</p>
+<h3>Связь с LLM</h3>
+<p>Когда «облако» активаций для некоторого класса имеет линейную структуру, но не проходит через начало — это аффинное подпространство. Параллельные аффинные подпространства (одно <span class="math">V</span>, разные <span class="math">x₀</span>) соответствуют концептам одной «категории» в разных «контекстах».</p>`
+  }
+},
+
+"linear-structures": {
+  type: "category", viz: "linear_structures",
+  en: {
+    title: "Linear structures",
+    summary: "Structures in activation space described by linear algebra: directions, subspaces, separating hyperplanes. The primary mathematical toolkit of mechanistic interpretability.",
+    content: `<h3>Why linearity?</h3>
+<p>Neural networks are non-linear in their computations, but activation space can have linear organisation: features are encoded as directions, classes separated by hyperplanes. This makes models analysable with elementary mathematics.</p>
+<h3>Hierarchy of linear structures</h3>
+<table>
+<tr><th>Structure</th><th>Dimension</th><th>Example in LLMs</th></tr>
+<tr><td>Direction (linear direction)</td><td>1</td><td>gender direction, sentiment</td></tr>
+<tr><td>Subspace</td><td>k > 1</td><td>part of speech, named entities</td></tr>
+<tr><td>Separating hyperplane</td><td>d−1</td><td>true/false, positivity</td></tr>
+</table>
+<h3>Connection to hypotheses</h3>
+<p>The Linear Representation Hypothesis (LRH) predicts that linear structures are the primary way features are encoded in LLMs. Empirical findings here are concrete evidence for or against LRH.</p>`
+  },
+  ru: {
+    title: "Линейные структуры",
+    summary: "Структуры в пространстве активаций, описываемые линейной алгеброй: направления, подпространства, разделяющие гиперплоскости. Основной инструмент интерпретируемости.",
+    content: `<h3>Почему линейность?</h3>
+<p>Нейронные сети нелинейны в вычислениях, но пространство активаций может иметь линейную организацию: признаки кодируются как направления, классы разделяются гиперплоскостями.</p>
+<h3>Иерархия линейных структур</h3>
+<table>
+<tr><th>Структура</th><th>Размерность</th><th>Пример в LLM</th></tr>
+<tr><td>Направление (linear direction)</td><td>1</td><td>gender direction, sentiment</td></tr>
+<tr><td>Подпространство (subspace)</td><td>k > 1</td><td>части речи, named entities</td></tr>
+<tr><td>Разделяющая гиперплоскость</td><td>d−1</td><td>истина/ложь, positivity</td></tr>
+</table>
+<h3>Связь с гипотезами</h3>
+<p>Гипотеза линейных репрезентаций (LRH) предсказывает, что линейные структуры — основной способ кодирования признаков в LLM. Эмпирические находки здесь — конкретные свидетельства для или против LRH.</p>`
+  }
+},
+
+"linear-separability": {
+  type: "concept", viz: "linear_sep",
+  en: {
+    title: "Linear separability",
+    summary: "Two activation classes are linearly separable if a hyperplane can separate them — necessary condition for linear feature representations; tested via linear probing.",
+    content: `<h3>Definition</h3>
+<p>Two sets <span class="math">A, B ⊂ ℝ^d</span> are <strong>linearly separable</strong> if there exist <span class="math">w ∈ ℝ^d, b ∈ ℝ</span> such that <span class="math">w·x + b > 0</span> for all <span class="math">x ∈ A</span> and <span class="math">w·x + b < 0</span> for all <span class="math">x ∈ B</span>. The hyperplane <span class="math">{x : w·x + b = 0}</span> is the decision boundary.</p>
+<blockquote>In ℝ²: cut two point clouds with a line. In ℝᵈ: cut with a hyperplane.</blockquote>
+<h3>Margin</h3>
+<p>The quality of separation is the minimum distance from any point to the hyperplane: <span class="math">margin = min_{x∈A∪B} |w·x + b| / ‖w‖</span>. A large margin indicates stable, semantically clean feature encoding.</p>
+<h3>Connection to linear probing</h3>
+<p>A linear probe (logistic regression on activations) achieves high accuracy if and only if the feature is linearly separable. This is the main operational test for LRH. Note: linear separability is a property of a specific activation dataset, not a claim about the nature of representations in general.</p>
+<h3>When it breaks down</h3>
+<p><strong>Superposition:</strong> multiple features in one direction → clouds are mixed. <strong>Polysemanticity:</strong> a neuron activates on unrelated concepts. <strong>Context-dependence:</strong> one word has different representations in different contexts.</p>`
+  },
+  ru: {
+    title: "Линейная разделимость",
+    summary: "Два класса активаций линейно разделимы, если их можно разрезать гиперплоскостью. Необходимое условие линейных репрезентаций; проверяется через linear probing.",
+    content: `<h3>Определение</h3>
+<p>Два множества <span class="math">A, B ⊂ ℝ^d</span> <strong>линейно разделимы</strong>, если существует <span class="math">w ∈ ℝ^d, b ∈ ℝ</span> такие, что <span class="math">w·x + b > 0</span> для всех <span class="math">x ∈ A</span> и <span class="math">w·x + b < 0</span> для всех <span class="math">x ∈ B</span>.</p>
+<blockquote>В ℝ²: разрезать два облака прямой. В ℝᵈ: разрезать гиперплоскостью.</blockquote>
+<h3>Отступ (margin)</h3>
+<p>Качество разделения: <span class="math">margin = min_{x∈A∪B} |w·x + b| / ‖w‖</span>. Большой margin → устойчивое и семантически чёткое кодирование.</p>
+<h3>Связь с linear probing</h3>
+<p>Linear probe достигает высокой точности ⟺ признак линейно разделим. Это основной операциональный тест для LRH. Линейная разделимость — свойство конкретного датасета активаций, не утверждение о природе репрезентаций в целом.</p>
+<h3>Когда нарушается</h3>
+<p><strong>Суперпозиция:</strong> несколько признаков в одном направлении → облака перемешаны. <strong>Полисемантичность:</strong> нейрон активируется на несвязанные концепты. <strong>Контекстная зависимость:</strong> одно слово имеет разные репрезентации в разных контекстах.</p>`
+  }
+},
+
+"linear-direction": {
+  type: "structure", viz: "linear_dir",
+  en: {
+    title: "Linear direction",
+    summary: "Unit vector rᶠ ∈ ℝᵈ encoding feature f. The projection rᶠ · x monotonically reflects the feature's value in the context defining activation x.",
+    content: `<h3>Formal definition</h3>
+<p>For feature <span class="math">f</span> — a vector <span class="math">r_f ∈ ℝ^d</span>, <span class="math">‖r_f‖ = 1</span>, such that the dot product <span class="math">r_f · x</span> monotonically reflects the "value" of feature <span class="math">f</span> in the context that generates activation <span class="math">x</span>.</p>
+<h3>Classic examples</h3>
+<table>
+<tr><th>Feature</th><th>How the direction is found</th></tr>
+<tr><td>Gender direction</td><td>Bolukbasi et al. 2016: PCA on pairs he/she, king/queen</td></tr>
+<tr><td>Truth direction</td><td>Marks & Tegmark 2023: logistic regression on true/false statements</td></tr>
+<tr><td>Sentiment direction</td><td>Probing on positive/negative sentiment examples</td></tr>
+</table>
+<h3>How to find a direction</h3>
+<p>1. Collect pairs (activation, feature_value). 2. Train a linear classifier or regression: the weight vector <span class="math">w</span> is a candidate for <span class="math">r_f</span>. 3. Normalise: <span class="math">r_f = w/‖w‖</span>. 4. Validate via causal intervention: add <span class="math">α·r_f</span> to the activation and verify that behaviour changes as expected.</p>`
+  },
+  ru: {
+    title: "Линейное направление",
+    summary: "Единичный вектор rᶠ ∈ ℝᵈ, кодирующий признак f. Проекция активации x на rᶠ монотонно связана со значением признака в данном контексте.",
+    content: `<h3>Формальное определение</h3>
+<p>Для признака <span class="math">f</span> — вектор <span class="math">r_f ∈ ℝ^d</span>, <span class="math">‖r_f‖ = 1</span>, такой что скалярное произведение <span class="math">r_f · x</span> монотонно связано со «значением» признака <span class="math">f</span> для контекста, задающего активацию <span class="math">x</span>.</p>
+<h3>Классические примеры</h3>
+<table>
+<tr><th>Признак</th><th>Нахождение направления</th></tr>
+<tr><td>Gender direction</td><td>Bolukbasi et al. 2016: PCA на парах he/she, king/queen</td></tr>
+<tr><td>Truth direction</td><td>Marks & Tegmark 2023: logistic regression на истинных/ложных утверждениях</td></tr>
+<tr><td>Sentiment direction</td><td>Probing на примерах с позитивной/негативной тональностью</td></tr>
+</table>
+<h3>Как найти направление</h3>
+<p>1. Собрать пары (активация, значение_признака). 2. Обучить линейный классификатор: вектор весов <span class="math">w</span> — кандидат на <span class="math">r_f</span>. 3. Нормировать: <span class="math">r_f = w/‖w‖</span>. 4. Проверить через causal intervention: добавить <span class="math">α·r_f</span> к активации и проверить изменение поведения.</p>`
+  }
+},
+
+"linear-subspace": {
+  type: "structure", viz: "linear_sub",
+  en: {
+    title: "Linear subspace",
+    summary: "k-dimensional linear subspace V ⊂ ℝᵈ corresponding to a group of related features. Generalises the single feature direction to the multidimensional case.",
+    content: `<h3>Definition</h3>
+<p>A linear subspace of dimension <span class="math">k</span>: <span class="math">V = span{e₁, ..., eₖ} ⊂ ℝ^d</span>, with orthonormal basis <span class="math">e₁, ..., eₖ</span>. Projection of an activation onto <span class="math">V</span>: <span class="math">P_V x = ∑ᵢ (eᵢ·x)eᵢ</span>.</p>
+<h3>When a subspace rather than a direction</h3>
+<p>"Part of speech" is not binary: noun, verb, adjective… Each class defines its own direction; together they span a k-dimensional subspace. Projecting onto this subspace "extracts" syntactic information while removing semantics.</p>
+<h3>Finding a subspace</h3>
+<p>PCA on activation differences (concept erasure), LEACE, or SVD on a matrix of contrastive pairs. A linear classifier with k > 1 outputs implicitly discovers a k-dimensional subspace through its weight matrix.</p>`
+  },
+  ru: {
+    title: "Линейное подпространство",
+    summary: "k-мерное линейное подпространство V ⊂ ℝᵈ, соответствующее группе связанных признаков. Обобщение направления на многомерный случай.",
+    content: `<h3>Определение</h3>
+<p>Линейное подпространство размерности <span class="math">k</span>: <span class="math">V = span{e₁, ..., eₖ} ⊂ ℝ^d</span>. Проекция активации: <span class="math">P_V x = ∑ᵢ (eᵢ·x)eᵢ</span>.</p>
+<h3>Когда нужно подпространство, а не направление</h3>
+<p>Признак «часть речи» — не бинарный: существительное, глагол, прилагательное... Каждый класс задаёт своё направление; все вместе они образуют k-мерное подпространство.</p>
+<h3>Нахождение подпространства</h3>
+<p>PCA на разностях активаций (concept erasure), LEACE, или SVD на матрице контрастных пар. Линейный классификатор с k > 1 выходами неявно обнаруживает k-мерное подпространство через веса.</p>`
+  }
+},
+
+"hypotheses": {
+  type: "category", viz: "hypotheses",
+  en: {
+    title: "Hypotheses",
+    summary: "Theoretical frameworks explaining the nature of LLM representations. Unlike specific empirical findings, hypotheses make general claims about the structure of activation space.",
+    content: `<h3>Why a separate category</h3>
+<p>Empirical findings (a torus for days of week, SAE features) are specific pieces of evidence. Hypotheses are explanatory frameworks that predict which structures exist and why. They are verified by accumulating evidence, not by a single experiment.</p>
+<h3>Hypotheses in this map</h3>
+<table>
+<tr><th>Hypothesis</th><th>Claim</th><th>Key paper</th></tr>
+<tr><td>LRH</td><td>Features are linear directions; linear arithmetic over them is semantically meaningful</td><td>Park et al., 2023</td></tr>
+<tr><td>Platonic Rep.</td><td>Different models converge to a single representation of reality</td><td>Huh et al., 2024</td></tr>
+<tr><td>Superposition</td><td>Models pack more features than neurons, encoding them in superposition</td><td>Elhage et al., 2022</td></tr>
+</table>`
+  },
+  ru: {
+    title: "Гипотезы",
+    summary: "Теоретические рамки, объясняющие природу репрезентаций в LLM. Гипотезы делают общие утверждения о структуре activation space — в отличие от конкретных эмпирических находок.",
+    content: `<h3>Зачем отдельная категория</h3>
+<p>Эмпирические находки (тор для дней недели, SAE-фичи) — конкретные свидетельства. Гипотезы — объяснительные рамки, предсказывающие, какие структуры существуют и почему. Верифицируются накоплением свидетельств.</p>
+<h3>Гипотезы в этой карте</h3>
+<table>
+<tr><th>Гипотеза</th><th>Утверждение</th><th>Ключевая бумага</th></tr>
+<tr><td>LRH</td><td>Признаки — линейные направления; над ними работает линейная арифметика</td><td>Park et al., 2023</td></tr>
+<tr><td>Platonic Rep.</td><td>Разные модели сходятся к одной репрезентации реальности</td><td>Huh et al., 2024</td></tr>
+<tr><td>Superposition</td><td>Моделям «не хватает» нейронов, они кодируют признаки в суперпозиции</td><td>Elhage et al., 2022</td></tr>
+</table>`
+  }
+},
+
+"lrh": {
+  type: "hypothesis", viz: "lrh",
+  en: {
+    title: "Linear Representation Hypothesis",
+    summary: "Human-interpretable features are encoded as linear directions in activation space; linear operations on them are semantically meaningful.",
+    content: `<h3>Statement</h3>
+<p>For each feature <span class="math">f</span> there exists a unit vector <span class="math">r_f ∈ ℝ^d</span> such that the projection <span class="math">r_f · x</span> monotonically reflects the "value" of <span class="math">f</span> in the context generating activation <span class="math">x</span>.</p>
+<p><strong>Strong version:</strong> linear operations on directions correspond to semantic operations. Antonym → reflection through a hyperplane. Negation → sign flip of the projection.</p>
+<h3>Key evidence</h3>
+<table>
+<tr><th>Phenomenon</th><th>Interpretation</th></tr>
+<tr><td>Word2Vec: king−man+woman≈queen</td><td>"Gender" is a linear direction in embedding space</td></tr>
+<tr><td>Linear probes reach SOTA</td><td>Features are linearly separable → likely linearly encoded</td></tr>
+<tr><td>Activation steering works</td><td>Adding r_f to an activation changes behaviour predictably</td></tr>
+<tr><td>ITI (Inference-Time Intervention)</td><td>Editing one direction does not break others</td></tr>
+</table>
+<h3>Limitations</h3>
+<p><strong>Superposition:</strong> if there are more features than neurons, "clean" directions do not exist — shown in toy models by Elhage et al. (2022). <strong>Causality gap:</strong> a linear probe finds a correlate of a feature but does not prove that the model uses that direction in its computations.</p>
+<h3>Connection to Platonic Rep.</h3>
+<p>If different models converge to the same structures and those structures are linear, both hypotheses mutually reinforce each other. Platonic Rep. would explain <em>why</em> structures are linear: they reflect the objective statistical structure of the data.</p>`
+  },
+  ru: {
+    title: "Гипотеза линейных репрезентаций",
+    summary: "Человеко-интерпретируемые признаки кодируются как линейные направления в activation space; линейные операции над ними семантически осмысленны.",
+    content: `<h3>Формулировка</h3>
+<p>Для каждого признака <span class="math">f</span> существует единичный вектор <span class="math">r_f ∈ ℝ^d</span> такой, что проекция <span class="math">r_f · x</span> монотонно отражает «значение» <span class="math">f</span> в контексте активации <span class="math">x</span>.</p>
+<p><strong>Сильная версия:</strong> линейные операции над направлениями соответствуют семантическим операциям. Антоним → рефлексия. Отрицание → смена знака проекции.</p>
+<h3>Ключевые свидетельства</h3>
+<table>
+<tr><th>Феномен</th><th>Интерпретация</th></tr>
+<tr><td>Word2Vec: king−man+woman≈queen</td><td>Признак «пол» — линейное направление в embedding space</td></tr>
+<tr><td>Linear probes достигают SOTA</td><td>Признаки линейно разделимы → скорее всего линейно закодированы</td></tr>
+<tr><td>Activation steering работает</td><td>Сложение r_f к активации меняет поведение предсказуемо</td></tr>
+<tr><td>ITI</td><td>Редактирование одного направления не ломает остальные</td></tr>
+</table>
+<h3>Ограничения</h3>
+<p><strong>Суперпозиция:</strong> если признаков больше нейронов, «чистых» направлений нет. <strong>Causality gap:</strong> linear probe находит коррелят, но не доказывает, что модель использует это направление для вычислений.</p>
+<h3>Связь с Platonic Rep.</h3>
+<p>Если разные модели сходятся к одним структурам и эти структуры линейны — обе гипотезы взаимно поддерживают друг друга.</p>`
+  }
+},
+
+"platonic-representation": {
+  type: "hypothesis", viz: "platonic",
+  en: {
+    title: "Platonic Representation Hypothesis",
+    summary: "Different neural networks — regardless of architecture and training modality — converge to a single representation of reality, measured via Centered Kernel Alignment (CKA).",
+    content: `<h3>Statement</h3>
+<p>Huh et al. (2024): modern neural networks converge to a single "Platonic" representation of the world. Formally measured via <strong>Centered Kernel Alignment (CKA)</strong>:</p>
+<p><span class="math">CKA(K_A, K_B) = ‖K_A K_B‖_F / (‖K_A‖_F ‖K_B‖_F)</span></p>
+<p>where <span class="math">K_{ij} = k(x_i, x_j)</span> is the kernel matrix of pairwise representational similarities. High CKA = similar geometry.</p>
+<h3>Key observations</h3>
+<p><strong>Cross-modal convergence:</strong> language models (GPT) and vision models (ViT) have high CKA on the same real-world objects. <strong>Scale effect:</strong> the more capable the model, the higher its CKA with other capable models. <strong>Architecture invariance:</strong> transformers and ConvNets converge.</p>
+<h3>Plato's allegory</h3>
+<p>Different LLMs are like prisoners seeing different "shadows" (data and architectures), yet they infer the same structure of the real world. The representation is not an artefact of training but a reflection of the objective statistical structure of reality.</p>
+<h3>Criticisms</h3>
+<p><strong>What exactly converges?</strong> High CKA does not mean specific directions coincide — only that the pairwise similarity geometry is similar. <strong>Selection bias:</strong> experiments use objects that both models "know" — convergence may only hold there.</p>`
+  },
+  ru: {
+    title: "Гипотеза платонических репрезентаций",
+    summary: "Разные нейронные сети — независимо от архитектуры и модальности — сходятся к единой репрезентации реальности, измеряемой через CKA.",
+    content: `<h3>Формулировка</h3>
+<p>Huh et al. (2024): современные нейронные сети сходятся к одной «платоновской» репрезентации мира. Измеряется через <strong>CKA</strong>:</p>
+<p><span class="math">CKA(K_A, K_B) = ‖K_A K_B‖_F / (‖K_A‖_F ‖K_B‖_F)</span></p>
+<h3>Ключевые наблюдения</h3>
+<p><strong>Межмодальная конвергенция:</strong> языковые (GPT) и зрительные (ViT) модели имеют высокий CKA для одних объектов. <strong>Масштабный эффект:</strong> чем мощнее модель, тем выше CKA с другими. <strong>Инвариантность к архитектуре:</strong> трансформеры и ConvNets сходятся.</p>
+<h3>Аллегория Платона</h3>
+<p>Разные LLM — «заключённые» с разными «тенями» (данными), но они выводят одну структуру реального мира. Репрезентация — не артефакт обучения, а отражение объективной статистики реальности.</p>
+<h3>Критика</h3>
+<p><strong>Что именно сходится?</strong> Высокий CKA не означает совпадения конкретных направлений. <strong>Selection bias:</strong> возможно, сходство только там, где у обоих моделей есть данные.</p>`
+  }
+}
+};
+
+// ══════════════════════════════════════════════════════════
+// D3 TREE (no collapse — click = show theory only)
+// ══════════════════════════════════════════════════════════
+
+let selectedId = null;
+let lang = "en";
+
+function toggleLang() {
+  lang = lang === "en" ? "ru" : "en";
+  document.getElementById("lang-btn").textContent = lang === "en" ? "RU" : "EN";
+  buildTree();
+  if (selectedId) showTheory(selectedId);
+  else document.getElementById("theory-panel").innerHTML =
+    `<div class="placeholder">${lang === "en" ? "← Select a node to read theory" : "← Выберите узел в дереве"}</div>`;
+}
+
+function buildTree() {
+  const panel = document.getElementById("tree-panel");
+  const W = panel.clientWidth - 8;
+
+  const root = d3.hierarchy(taxonomy);
+  // nodeSize: [vertical spacing, horizontal depth step]
+  d3.tree().nodeSize([24, 110])(root);
+
+  // Skip root node; shift y so categories start at left edge
+  const nodes = root.descendants().slice(1);
+  nodes.forEach(d => { d.y -= 110; }); // categories → y=0, leaves → y=110
+
+  const links = root.links().filter(l => l.source !== root);
+
+  const xs = nodes.map(d => d.x);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const H = maxX - minX + 40;
+
+  const svg = d3.select("#tree-svg")
+    .attr("width", W)
+    .attr("height", H);
+  svg.selectAll("*").remove();
+
+  const g = svg.append("g")
+    .attr("transform", `translate(14, ${20 - minX})`);
+
+  // Links
+  g.selectAll(".link")
+    .data(links)
+    .join("path")
+    .attr("class", "link")
+    .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
+
+  // Nodes
+  const node = g.selectAll(".node")
+    .data(nodes)
+    .join("g")
+    .attr("class", d => `node node--${d.data.type}`)
+    .attr("transform", d => `translate(${d.y},${d.x})`)
+    .on("click", (event, d) => {
+      selectedId = d.data.id;
+      g.selectAll(".node").classed("selected", n => n.data.id === selectedId);
+      showTheory(d.data.id);
+    });
+
+  node.append("circle")
+    .attr("r", d => d.depth === 1 ? 6 : 4)
+    .attr("stroke-dasharray", d => d.data.type === "concept" ? "3 2" : null);
+
+  node.append("text")
+    .attr("dx", d => d.depth === 1 ? 10 : 9)
+    .attr("dominant-baseline", "middle")
+    .attr("font-size", d => d.depth === 1 ? "12.5px" : "11.5px")
+    .attr("font-weight", d => d.depth === 1 ? "bold" : "normal")
+    .attr("font-style", d => d.data.type === "hypothesis" ? "italic" : "normal")
+    .attr("fill", d => d.depth === 1 ? "#111" : "#333")
+    .text(d => d.data[`lt_${lang}`] || d.data[`label_${lang}`] || d.data.lt || d.data.label);
+}
+
+// ══════════════════════════════════════════════════════════
+// SHOW THEORY
+// ══════════════════════════════════════════════════════════
+
+function showTheory(id) {
+  const panel = document.getElementById("theory-panel");
+  const t = theory[id];
+  if (!t) {
+    panel.innerHTML = `<div class="theory-inner"><p class="placeholder" style="margin-top:60px">${lang === "en" ? `No theory written yet for «${id}».` : `Теория для «${id}» ещё не написана.`}</p></div>`;
+    return;
+  }
+
+  // Support both flat (legacy) and bilingual {en, ru} structure
+  const tl = t[lang] || t;
+
+  const typeLabels = {
+    en: { category:"Category", structure:"Structure", hypothesis:"Hypothesis", concept:"Concept" },
+    ru: { category:"Категория", structure:"Структура", hypothesis:"Гипотеза", concept:"Концепция" }
+  };
+  const secLabel = lang === "en" ? "Entries" : "Записи";
+  const altTitle = lang === "en" ? (t.ru && t.ru.title) || t.title_ru || "" : (t.en && t.en.title) || t.title || "";
+
+  const rel = entries.filter(e => e.node === id);
+  let entriesHtml = "";
+  if (rel.length) {
+    entriesHtml = `<div class="entries-section">
+      <div class="sec-label">${secLabel} (${rel.length})</div>
+      ${rel.map(e => `<div class="entry-card">
+        <div class="et">${e.title}</div>
+        <div class="em">${e.authors} · ${e.year}${e.arxiv ? ` · <a href="https://arxiv.org/abs/${e.arxiv}" target="_blank">arXiv:${e.arxiv}</a>` : ""}</div>
+        <div class="ed">${lang === "en" ? (e.desc_en || e.desc) : e.desc}</div>
+      </div>`).join("")}
+    </div>`;
+  }
+
+  panel.innerHTML = `<div class="theory-inner">
+    <h2>${tl.title}</h2>
+    <div class="meta">
+      <span class="type-badge type-${t.type}">${typeLabels[lang][t.type]}</span>
+      <span style="color:#bbb">${altTitle}</span>
+    </div>
+    <p class="summary">${tl.summary}</p>
+    <div class="viz-box" id="viz-box"></div>
+    <div class="viz-caption" id="viz-caption"></div>
+    <div class="content">${tl.content}</div>
+    ${entriesHtml}
+  </div>`;
+
+  const box = document.getElementById("viz-box");
+  const cap = document.getElementById("viz-caption");
+  if (box && vizMap[t.viz]) {
+    vizMap[t.viz](box, cap);
+  } else if (box) {
+    box.style.display = "none";
+    if (cap) cap.style.display = "none";
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// VISUALIZATIONS
+// ══════════════════════════════════════════════════════════
+
+const PALE = "#f2f0ec";
+const INK  = "#1a1a1a";
+const GRAY = "#aaa";
+
+function makeSVG(el, w, h) {
+  return d3.select(el).append("svg")
+    .attr("viewBox", `0 0 ${w} ${h}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("display", "block")
+    .style("width", "100%")
+    .style("height", "auto");
+}
+
+// ── manifolds: four-panel thumbnail ──────────────────────
+function vizManifolds(el, cap) {
+  const svg = makeSVG(el, 600, 200);
+  const defs = svg.append("defs");
+  defs.append("marker").attr("id","mfd-arr").attr("markerWidth",6).attr("markerHeight",4).attr("refX",5).attr("refY",2).attr("orient","auto")
+    .append("polygon").attr("points","0 0,6 2,0 4").attr("fill","#888");
+  const labels = ["Torus T²", "Hyperbolic", "Sphere S²", "Affine plane"];
+  const descs  = ["cyclic, closed", "neg. curvature", "pos. curvature", "flat, open"];
+
+  labels.forEach((lbl, i) => {
+    const cx = 75 + i * 150, cy = 95;
+    const g = svg.append("g");
+
+    if (i === 0) { // torus outline
+      g.append("ellipse").attr("cx",cx).attr("cy",cy).attr("rx",42).attr("ry",22).attr("fill","none").attr("stroke","#888").attr("stroke-width",1.5);
+      g.append("ellipse").attr("cx",cx).attr("cy",cy).attr("rx",15).attr("ry",22).attr("fill",PALE).attr("stroke","#888").attr("stroke-width",1.2);
+      g.append("ellipse").attr("cx",cx).attr("cy",cy).attr("rx",42).attr("ry",22).attr("fill","none").attr("stroke","#aaa").attr("stroke-width",1).attr("stroke-dasharray","4 3");
+    } else if (i === 1) { // poincaré disk
+      g.append("circle").attr("cx",cx).attr("cy",cy).attr("r",42).attr("fill","none").attr("stroke","#888").attr("stroke-width",1.5);
+      [[0,0],[0,-22],[19,11],[-19,11]].forEach(([dx,dy]) => {
+        g.append("circle").attr("cx",cx+dx).attr("cy",cy+dy).attr("r",4).attr("fill","#888");
+      });
+      // tree edges
+      [[0,0,0,-22],[0,0,19,11],[0,0,-19,11]].forEach(([x1,y1,x2,y2]) => {
+        g.append("line").attr("x1",cx+x1).attr("y1",cy+y1).attr("x2",cx+x2).attr("y2",cy+y2).attr("stroke","#aaa").attr("stroke-width",1.2);
+      });
+    } else if (i === 2) { // sphere
+      g.append("circle").attr("cx",cx).attr("cy",cy).attr("r",42).attr("fill","none").attr("stroke","#888").attr("stroke-width",1.5);
+      g.append("ellipse").attr("cx",cx).attr("cy",cy).attr("rx",42).attr("ry",13).attr("fill","none").attr("stroke","#bbb").attr("stroke-width",1).attr("stroke-dasharray","4 3");
+    } else { // affine plane
+      const pts = [[cx-40,cy-20],[cx+30,cy-20],[cx+40,cy+20],[cx-30,cy+20]];
+      g.append("polygon").attr("points",pts.map(p=>p.join(",")).join(" ")).attr("fill","#e8e4dc").attr("stroke","#888").attr("stroke-width",1.5);
+      g.append("line").attr("x1",cx-5).attr("y1",cy+20).attr("x2",cx-5).attr("y2",cy-18).attr("stroke","#888").attr("stroke-width",1.5).attr("marker-end","url(#mfd-arr)");
+      g.append("line").attr("x1",cx-5).attr("y1",cy+20).attr("x2",cx+35).attr("y2",cy+20).attr("stroke","#888").attr("stroke-width",1.5).attr("marker-end","url(#mfd-arr)");
+    }
+
+    g.append("text").attr("x",cx).attr("y",cy+52).attr("text-anchor","middle").attr("font-size","11px").attr("font-weight","bold").attr("fill","#333").text(lbl);
+    g.append("text").attr("x",cx).attr("y",cy+66).attr("text-anchor","middle").attr("font-size","10px").attr("fill","#888").text(descs[i]);
+  });
+  cap.textContent = "Four types of manifolds found (or hypothesized) in LLM activation space";
+}
+
+// ── torus ─────────────────────────────────────────────────
+function vizTorus(el, cap) {
+  const W = 580, H = 260;
+  const svg = makeSVG(el, W, H);
+
+  // --- Left: wireframe torus ---
+  const R = 58, r = 26;
+  const tiltX = Math.PI / 4.5, tiltZ = -Math.PI / 10;
+  const cx = 145, cy = 128;
+
+  function proj(x3, y3, z3) {
+    const yr = y3*Math.cos(tiltX) - z3*Math.sin(tiltX);
+    const zr = y3*Math.sin(tiltX) + z3*Math.cos(tiltX);
+    const xr = x3*Math.cos(tiltZ) - yr*Math.sin(tiltZ);
+    const yr2= x3*Math.sin(tiltZ) + yr*Math.cos(tiltZ);
+    return [cx + xr, cy + yr2];
+  }
+  function torusPt(u, v) {
+    return proj((R+r*Math.cos(v))*Math.cos(u),(R+r*Math.cos(v))*Math.sin(u),r*Math.sin(v));
+  }
+
+  const N=40, M=18;
+  const g = svg.append("g");
+
+  // lat lines (v fixed)
+  for (let j=0; j<M; j+=2) {
+    const v = 2*Math.PI*j/M;
+    const pts = Array.from({length:N+1},(_,i)=>torusPt(2*Math.PI*i/N,v));
+    g.append("path").attr("d","M"+pts.map(p=>p.join(",")).join("L")+"Z")
+      .attr("fill","none").attr("stroke","#c5c2bb").attr("stroke-width",0.8);
+  }
+  // lon lines (u fixed)
+  for (let i=0; i<N; i+=5) {
+    const u = 2*Math.PI*i/N;
+    const pts = Array.from({length:M+1},(_,j)=>torusPt(u,2*Math.PI*j/M));
+    g.append("path").attr("d","M"+pts.map(p=>p.join(",")).join("L")+"Z")
+      .attr("fill","none").attr("stroke","#999").attr("stroke-width",1);
+  }
+  svg.append("text").attr("x",cx).attr("y",H-12).attr("text-anchor","middle").attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#888").text("T² = S¹ × S¹");
+
+  // --- Right: days on S¹ ---
+  const cr = 88, rcx = 410, rcy = 128;
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const cols = ["#e07060","#e09030","#c0b020","#40a060","#2080c0","#7060d0","#c040a0"];
+
+  const rg = svg.append("g");
+  rg.append("circle").attr("cx",rcx).attr("cy",rcy).attr("r",cr).attr("fill","none").attr("stroke","#ddd").attr("stroke-width",1.5);
+
+  // arc arrows between consecutive days
+  const defs = svg.append("defs");
+  defs.append("marker").attr("id","arrowhead").attr("markerWidth",6).attr("markerHeight",4).attr("refX",5).attr("refY",2).attr("orient","auto")
+    .append("polygon").attr("points","0 0, 6 2, 0 4").attr("fill","#ccc");
+
+  days.forEach((day, i) => {
+    const a = 2*Math.PI*i/days.length - Math.PI/2;
+    const x = rcx + cr*Math.cos(a), y = rcy + cr*Math.sin(a);
+    rg.append("circle").attr("cx",x).attr("cy",y).attr("r",8)
+      .attr("fill",cols[i]).attr("stroke","white").attr("stroke-width",1.8);
+    const la = 1.38;
+    rg.append("text").attr("x",rcx+cr*la*Math.cos(a)).attr("y",rcy+cr*la*Math.sin(a))
+      .attr("text-anchor","middle").attr("dominant-baseline","middle")
+      .attr("font-size","11px").attr("fill","#333").text(day);
+  });
+
+  rg.append("text").attr("x",rcx).attr("y",rcy).attr("text-anchor","middle").attr("dominant-baseline","middle")
+    .attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#bbb").text("S¹");
+
+  // cyclicity arrow (arc from Sun back toward Mon)
+  const a0 = 2*Math.PI*6/7 - Math.PI/2 + 0.2;
+  const a1 = 2*Math.PI*0/7 - Math.PI/2 - 0.2;
+  const ra = cr + 18;
+  const x0 = rcx+ra*Math.cos(a0), y0 = rcy+ra*Math.sin(a0);
+  const x1 = rcx+ra*Math.cos(a1), y1 = rcy+ra*Math.sin(a1);
+  rg.append("path").attr("d",`M${x0},${y0} A${ra},${ra} 0 0,1 ${x1},${y1}`)
+    .attr("fill","none").attr("stroke","#ccc").attr("stroke-width",1.5)
+    .attr("marker-end","url(#arrowhead)");
+
+  cap.textContent = "Left: torus T² = S¹ × S¹ (wireframe). Right: days of week on S¹ — Sunday wraps back to Monday (Gurnee & Tegmark, 2024).";
+}
+
+// ── hyperbolic: poincaré disk with tree ───────────────────
+function vizHyperbolic(el, cap) {
+  const W = 400, H = 340;
+  const svg = makeSVG(el, W, H);
+  const cx = W/2, cy = H/2, R = 140;
+  const g = svg.append("g");
+
+  // Boundary
+  g.append("circle").attr("cx",cx).attr("cy",cy).attr("r",R).attr("fill","#f8f5f0").attr("stroke","#bbb").attr("stroke-width",1.5);
+
+  // Concentric reference circles
+  [0.35, 0.65, 0.88].forEach(frac => {
+    g.append("circle").attr("cx",cx).attr("cy",cy).attr("r",R*frac).attr("fill","none").attr("stroke","#e0ddd8").attr("stroke-width",0.8);
+  });
+
+  // Tree structure: root at center, 3 children at r=0.38, 9 grandchildren at r=0.72
+  const root_pt = [cx, cy];
+  const level1_angles = [-Math.PI/2, Math.PI/6, 5*Math.PI/6];
+  const level1_r = R * 0.38;
+  const level1_pts = level1_angles.map(a => [cx+level1_r*Math.cos(a), cy+level1_r*Math.sin(a)]);
+  const level2_r = R * 0.72;
+  const level1_labels = ["animate", "inanimate", "abstract"];
+  const level2_labels = [["mammal","insect","fish"],["furniture","vehicle","tool"],["event","state","property"]];
+  const nodeCol = "#555";
+
+  // Root → level1 edges
+  level1_pts.forEach(pt => {
+    g.append("line").attr("x1",root_pt[0]).attr("y1",root_pt[1]).attr("x2",pt[0]).attr("y2",pt[1])
+      .attr("stroke","#ccc").attr("stroke-width",1.2);
+  });
+
+  // Level1 → level2 edges and nodes
+  level1_angles.forEach((a1, i) => {
+    const spreadAngles = [a1 - 0.38, a1, a1 + 0.38];
+    spreadAngles.forEach((a2, j) => {
+      const x2 = cx + level2_r*Math.cos(a2), y2 = cy + level2_r*Math.sin(a2);
+      g.append("line").attr("x1",level1_pts[i][0]).attr("y1",level1_pts[i][1]).attr("x2",x2).attr("y2",y2)
+        .attr("stroke","#ddd").attr("stroke-width",1);
+      g.append("circle").attr("cx",x2).attr("cy",y2).attr("r",3.5).attr("fill","#aaa").attr("stroke","white").attr("stroke-width",1);
+      g.append("text").attr("x",x2+(x2-cx)*0.22).attr("y",y2+(y2-cy)*0.22)
+        .attr("text-anchor","middle").attr("dominant-baseline","middle")
+        .attr("font-size","9px").attr("fill","#888").text(level2_labels[i][j]);
+    });
+  });
+
+  // Level1 nodes
+  level1_pts.forEach((pt, i) => {
+    g.append("circle").attr("cx",pt[0]).attr("cy",pt[1]).attr("r",5.5).attr("fill","#777").attr("stroke","white").attr("stroke-width",1.5);
+    const dx = (pt[0]-cx)*0.32, dy = (pt[1]-cy)*0.32;
+    g.append("text").attr("x",pt[0]+dx).attr("y",pt[1]+dy)
+      .attr("text-anchor","middle").attr("dominant-baseline","middle")
+      .attr("font-size","10px").attr("font-weight","bold").attr("fill","#444").text(level1_labels[i]);
+  });
+
+  // Root node
+  g.append("circle").attr("cx",cx).attr("cy",cy).attr("r",7).attr("fill",INK).attr("stroke","white").attr("stroke-width",2);
+  g.append("text").attr("x",cx).attr("y",cy-14).attr("text-anchor","middle").attr("font-size","10px").attr("font-weight","bold").attr("fill","#333").text("entity");
+
+  // Legend: radius ↔ depth in hierarchy
+  g.append("text").attr("x",cx).attr("y",H-14).attr("text-anchor","middle").attr("font-size","9.5px").attr("fill","#aaa")
+    .text("radius in disk ∝ depth in hierarchy");
+
+  cap.textContent = "Poincaré disk model: tree grows exponentially, all levels equidistant from root. Hyperbolic space is natural for semantic hierarchies.";
+}
+
+// ── sphere ────────────────────────────────────────────────
+function vizSphere(el, cap) {
+  const W=440, H=280;
+  const svg = makeSVG(el, W, H);
+  const cx=160, cy=140, R=110;
+  const g = svg.append("g");
+
+  // Sphere outline
+  g.append("circle").attr("cx",cx).attr("cy",cy).attr("r",R).attr("fill","#f5f3ef").attr("stroke","#aaa").attr("stroke-width",1.5);
+  // Equator (dashed)
+  g.append("ellipse").attr("cx",cx).attr("cy",cy).attr("rx",R).attr("ry",R*0.3).attr("fill","none").attr("stroke","#ccc").attr("stroke-width",1).attr("stroke-dasharray","5 3");
+  // Meridian
+  g.append("ellipse").attr("cx",cx).attr("cy",cy).attr("rx",R*0.3).attr("ry",R).attr("fill","none").attr("stroke","#ccc").attr("stroke-width",1).attr("stroke-dasharray","5 3");
+
+  // Points on sphere surface with vectors from origin
+  const pts_angles = [[Math.PI/5, Math.PI/4],[Math.PI/3, Math.PI],[Math.PI*0.6, Math.PI*1.5],[Math.PI*0.8, Math.PI*0.6]];
+  const cols = ["#e07060","#4090c0","#50a060","#9060d0"];
+  pts_angles.forEach(([theta, phi], i) => {
+    const x3 = R*Math.sin(theta)*Math.cos(phi);
+    const z3 = R*Math.sin(theta)*Math.sin(phi);
+    const y3 = R*Math.cos(theta);
+    const tilt = Math.PI/6;
+    const xs = cx + x3;
+    const ys = cy + y3*Math.cos(tilt) - z3*Math.sin(tilt);
+    // Vector from center to point
+    g.append("line").attr("x1",cx).attr("y1",cy).attr("x2",xs).attr("y2",ys)
+      .attr("stroke",cols[i]).attr("stroke-width",1.5).attr("opacity",0.7);
+    g.append("circle").attr("cx",xs).attr("cy",ys).attr("r",5).attr("fill",cols[i]);
+  });
+
+  // LayerNorm label
+  const rhs = 310;
+  g.append("text").attr("x",rhs).attr("y",90).attr("font-size","12px").attr("font-weight","bold").attr("fill","#333").text("LayerNorm:");
+  g.append("text").attr("x",rhs).attr("y",112).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#555").text("x̂ = (x − μ) / σ");
+  g.append("text").attr("x",rhs).attr("y",138).attr("font-size","10.5px").attr("fill","#666").text("Projects activations");
+  g.append("text").attr("x",rhs).attr("y",155).attr("font-size","10.5px").attr("fill","#666").text("onto unit sphere Sⁿ⁻¹");
+  g.append("text").attr("x",rhs).attr("y",185).attr("font-size","10px").attr("fill","#aaa").text("‖x̂‖ = 1  for all x");
+
+  // Equation label
+  g.append("text").attr("x",cx).attr("y",H-10).attr("text-anchor","middle").attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#888").text("Sⁿ⁻¹ ⊂ ℝⁿ");
+
+  cap.textContent = "LayerNorm projects activations onto unit hypersphere Sⁿ⁻¹. All subsequent computations happen on (or near) this surface.";
+}
+
+// ── affine subspace ───────────────────────────────────────
+function vizAffine(el, cap) {
+  const W=500, H=260;
+  const svg = makeSVG(el, W, H);
+
+  // Simple 3D perspective: iso-ish projection
+  function iso(x, y, z) {
+    return [220 + x*1.0 - z*0.55, 130 - y*0.9 + z*0.35];
+  }
+
+  const g = svg.append("g");
+
+  // Plane parallelogram
+  const corners = [[0,0,0],[80,0,0],[80,0,60],[0,0,60]];
+  const projected = corners.map(([x,y,z]) => iso(x,y,z));
+  g.append("polygon").attr("points",projected.map(p=>p.join(",")).join(" ")).attr("fill","#e8e4d8").attr("stroke","#999").attr("stroke-width",1.2);
+
+  // Grid lines on plane
+  for (let xi=20; xi<80; xi+=20) {
+    const p1=iso(xi,0,0), p2=iso(xi,0,60);
+    g.append("line").attr("x1",p1[0]).attr("y1",p1[1]).attr("x2",p2[0]).attr("y2",p2[1]).attr("stroke","#ccc").attr("stroke-width",0.8);
+  }
+  for (let zi=20; zi<60; zi+=20) {
+    const p1=iso(0,0,zi), p2=iso(80,0,zi);
+    g.append("line").attr("x1",p1[0]).attr("y1",p1[1]).attr("x2",p2[0]).attr("y2",p2[1]).attr("stroke","#ccc").attr("stroke-width",0.8);
+  }
+
+  // Offset point x₀
+  const x0 = iso(20, 0, 20);
+  g.append("circle").attr("cx",x0[0]).attr("cy",x0[1]).attr("r",5).attr("fill",INK);
+  g.append("text").attr("x",x0[0]-14).attr("y",x0[1]-8).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#333").text("x₀");
+
+  // Basis vector e₁ (along x)
+  const e1end = iso(20+40, 0, 20);
+  const defs = svg.append("defs");
+  defs.append("marker").attr("id","av").attr("markerWidth",6).attr("markerHeight",4).attr("refX",5).attr("refY",2).attr("orient","auto")
+    .append("polygon").attr("points","0 0,6 2,0 4").attr("fill","#c04030");
+  g.append("line").attr("x1",x0[0]).attr("y1",x0[1]).attr("x2",e1end[0]).attr("y2",e1end[1])
+    .attr("stroke","#c04030").attr("stroke-width",2).attr("marker-end","url(#av)");
+  g.append("text").attr("x",(x0[0]+e1end[0])/2).attr("y",(x0[1]+e1end[1])/2-8).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#c04030").text("e₁");
+
+  // Basis vector e₂ (along z)
+  const e2end = iso(20, 0, 20+35);
+  defs.append("marker").attr("id","av2").attr("markerWidth",6).attr("markerHeight",4).attr("refX",5).attr("refY",2).attr("orient","auto")
+    .append("polygon").attr("points","0 0,6 2,0 4").attr("fill","#2060c0");
+  g.append("line").attr("x1",x0[0]).attr("y1",x0[1]).attr("x2",e2end[0]).attr("y2",e2end[1])
+    .attr("stroke","#2060c0").attr("stroke-width",2).attr("marker-end","url(#av2)");
+  g.append("text").attr("x",e2end[0]+5).attr("y",e2end[1]+2).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#2060c0").text("e₂");
+
+  // Formula
+  svg.append("text").attr("x",390).attr("y",110).attr("text-anchor","middle").attr("font-size","13px").attr("font-family","'Courier New',monospace").attr("fill","#333").text("A = x₀ + V");
+  svg.append("text").attr("x",390).attr("y",132).attr("text-anchor","middle").attr("font-size","10.5px").attr("fill","#888").text("V = span{e₁, e₂}");
+  svg.append("text").attr("x",390).attr("y",160).attr("text-anchor","middle").attr("font-size","10px").attr("fill","#aaa").text("V is a linear subspace");
+  svg.append("text").attr("x",390).attr("y",176).attr("text-anchor","middle").attr("font-size","10px").attr("fill","#aaa").text("A need not contain 0");
+
+  cap.textContent = "Affine subspace A = x₀ + V: a linear subspace V shifted by offset point x₀. Unlike linear subspaces, A need not pass through the origin.";
+}
+
+// ── linear structures: overview diagram ──────────────────
+function vizLinearStructures(el, cap) {
+  const W=540, H=220;
+  const svg = makeSVG(el, W, H);
+
+  // Three panels
+  const panels = [
+    { label:"Direction (1D)", x:90,  desc:"rᶠ · x > 0 iff f is present" },
+    { label:"Subspace (kD)",  x:270, desc:"Pᵥ x encodes a feature cluster" },
+    { label:"Hyperplane",     x:450, desc:"{x : w·x = 0} separates classes" },
+  ];
+
+  const defs = svg.append("defs");
+  defs.append("marker").attr("id","blarr").attr("markerWidth",6).attr("markerHeight",4).attr("refX",5).attr("refY",2).attr("orient","auto")
+    .append("polygon").attr("points","0 0,6 2,0 4").attr("fill","#555");
+
+  panels.forEach(({label, x, desc}, i) => {
+    const g = svg.append("g");
+    const cy = 100;
+
+    if (i === 0) {
+      // Direction: origin + arrow
+      g.append("line").attr("x1",x-55).attr("y1",cy).attr("x2",x+55).attr("y2",cy).attr("stroke","#eee").attr("stroke-width",1);
+      g.append("line").attr("x1",x).attr("y1",cy+55).attr("x2",x).attr("y2",cy-55).attr("stroke","#eee").attr("stroke-width",1);
+      g.append("line").attr("x1",x).attr("y1",cy).attr("x2",x+48).attr("y2",cy-42).attr("stroke","#c04030").attr("stroke-width",2).attr("marker-end","url(#blarr)");
+      g.append("text").attr("x",x+50).attr("y",cy-46).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#c04030").text("rᶠ");
+      [[15,-20],[28,-8],[8,-32]].forEach(([dx,dy]) => {
+        g.append("circle").attr("cx",x+dx).attr("cy",cy+dy).attr("r",4).attr("fill","#c04030").attr("opacity",0.5);
+      });
+      [[-20,15],[-30,5],[-12,25]].forEach(([dx,dy]) => {
+        g.append("circle").attr("cx",x+dx).attr("cy",cy+dy).attr("r",4).attr("fill","#4060a0").attr("opacity",0.5);
+      });
+
+    } else if (i === 1) {
+      // Subspace: a shaded band
+      const pts = [[x-50,cy+30],[x+50,cy-10],[x+50,cy-40],[x-50,cy]];
+      g.append("polygon").attr("points",pts.map(p=>p.join(",")).join(" ")).attr("fill","#dce8e4").attr("stroke","#6aaa90").attr("stroke-width",1.2);
+      g.append("text").attr("x",x).attr("y",cy-8).attr("text-anchor","middle").attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#4a8a70").text("V");
+      // Points in subspace
+      [[x-20,cy+12],[x+10,cy-2],[x+30,cy-22]].forEach(([px,py]) => {
+        g.append("circle").attr("cx",px).attr("cy",py).attr("r",4).attr("fill","#5a9a80");
+      });
+
+    } else {
+      // Hyperplane: dividing line + two classes
+      g.append("line").attr("x1",x-55).attr("y1",cy-50).attr("x2",x+45).attr("y2",cy+50).attr("stroke","#5a5a5a").attr("stroke-width",1.5).attr("stroke-dasharray","5 3");
+      [[x-25,cy-20],[x-35,cy-5],[x-15,cy-35]].forEach(([px,py]) => {
+        g.append("circle").attr("cx",px).attr("cy",py).attr("r",5).attr("fill","#c04030").attr("opacity",0.7);
+      });
+      [[x+25,cy+20],[x+35,cy+5],[x+15,cy+35]].forEach(([px,py]) => {
+        g.append("circle").attr("cx",px).attr("cy",py).attr("r",5).attr("fill","#4060a0").attr("opacity",0.7);
+      });
+      g.append("text").attr("x",x+47).attr("y",cy+55).attr("font-size","10px").attr("font-family","'Courier New',monospace").attr("fill","#666").text("w·x=0");
+    }
+
+    g.append("text").attr("x",x).attr("y",cy+72).attr("text-anchor","middle").attr("font-size","11px").attr("font-weight","bold").attr("fill","#333").text(label);
+    g.append("text").attr("x",x).attr("y",cy+88).attr("text-anchor","middle").attr("font-size","9.5px").attr("fill","#888").text(desc);
+  });
+
+  cap.textContent = "Three linear structures in activation space, from simplest (1D direction) to most complex (hyperplane separation).";
+}
+
+// ── linear separability ───────────────────────────────────
+function vizLinearSep(el, cap) {
+  const W=480, H=300;
+  const svg = makeSVG(el, W, H);
+  const mx=50, my=30, iw=240, ih=240;
+  const g = svg.append("g").attr("transform",`translate(${mx},${my})`);
+
+  // Axes
+  g.append("line").attr("x1",0).attr("y1",ih).attr("x2",iw).attr("y2",ih).attr("stroke","#ddd").attr("stroke-width",1);
+  g.append("line").attr("x1",0).attr("y1",0).attr("x2",0).attr("y2",ih).attr("stroke","#ddd").attr("stroke-width",1);
+
+  // Seeded random points — two clusters
+  const seed = (s) => { let v=s; return () => { v=(v*1664525+1013904223)&0xffffffff; return (v>>>0)/0xffffffff; }; };
+  const rA = seed(42), rB = seed(99);
+  const posClass = Array.from({length:22},()=>[ 130+rA()*80, 40+rA()*80]);
+  const negClass = Array.from({length:22},()=>[ 30+rB()*80, 120+rB()*80]);
+
+  posClass.forEach(([x,y]) => g.append("circle").attr("cx",x).attr("cy",y).attr("r",5).attr("fill","#c04030").attr("opacity",0.75));
+  negClass.forEach(([x,y]) => g.append("circle").attr("cx",x).attr("cy",y).attr("r",5).attr("fill","#4060a0").attr("opacity",0.75));
+
+  // Decision boundary
+  g.append("line").attr("x1",60).attr("y1",20).attr("x2",195).attr("y2",220).attr("stroke","#30a060").attr("stroke-width",2);
+
+  // Margin lines (dashed)
+  g.append("line").attr("x1",40).attr("y1",20).attr("x2",175).attr("y2",220).attr("stroke","#30a060").attr("stroke-width",1).attr("stroke-dasharray","5 3").attr("opacity",0.5);
+  g.append("line").attr("x1",80).attr("y1",20).attr("x2",215).attr("y2",220).attr("stroke","#30a060").attr("stroke-width",1).attr("stroke-dasharray","5 3").attr("opacity",0.5);
+
+  // Margin arrows
+  const mx1=75, my1=90, mx2=105, my2=75;
+  g.append("line").attr("x1",mx1).attr("y1",my1).attr("x2",mx2).attr("y2",my2)
+    .attr("stroke","#555").attr("stroke-width",1.2).attr("marker-end","url(#blarr2)");
+  const defs2 = svg.append("defs");
+  defs2.append("marker").attr("id","blarr2").attr("markerWidth",6).attr("markerHeight",4).attr("refX",5).attr("refY",2).attr("orient","auto")
+    .append("polygon").attr("points","0 0,6 2,0 4").attr("fill","#555");
+  g.append("text").attr("x",mx2+4).attr("y",my2-2).attr("font-size","10px").attr("font-family","'Courier New',monospace").attr("fill","#555").text("margin");
+
+  // Labels
+  g.append("text").attr("x",195).attr("y",55).attr("font-size","11px").attr("font-weight","bold").attr("fill","#c04030").text("positive");
+  g.append("text").attr("x",20).attr("y",185).attr("font-size","11px").attr("font-weight","bold").attr("fill","#4060a0").text("negative");
+
+  // Right panel: formula
+  const rx = 320;
+  svg.append("text").attr("x",rx).attr("y",70).attr("font-size","12px").attr("font-weight","bold").attr("fill","#333").text("Separating");
+  svg.append("text").attr("x",rx).attr("y",88).attr("font-size","12px").attr("font-weight","bold").attr("fill","#333").text("hyperplane:");
+  svg.append("text").attr("x",rx).attr("y",115).attr("font-size","12px").attr("font-family","'Courier New',monospace").attr("fill","#555").text("w · x + b = 0");
+  svg.append("text").attr("x",rx).attr("y",150).attr("font-size","10.5px").attr("fill","#666").text("A ∈ class+ if w·x+b > 0");
+  svg.append("text").attr("x",rx).attr("y",168).attr("font-size","10.5px").attr("fill","#666").text("B ∈ class− if w·x+b < 0");
+  svg.append("text").attr("x",rx).attr("y",205).attr("font-size","10.5px").attr("fill","#aaa").text("w = linear probe");
+  svg.append("text").attr("x",rx).attr("y",221).attr("font-size","10.5px").attr("fill","#aaa").text("weights = rᶠ");
+
+  cap.textContent = "Two classes of activations (e.g. positive / negative sentiment) separated by a hyperplane w·x+b=0. Large margin → clean, stable feature encoding.";
+}
+
+// ── linear direction ──────────────────────────────────────
+function vizLinearDir(el, cap) {
+  const W=500, H=280;
+  const svg = makeSVG(el, W, H);
+  const cx=160, cy=140;
+  const g = svg.append("g");
+
+  // Grid
+  for (let v=-120; v<=120; v+=40) {
+    g.append("line").attr("x1",cx-130).attr("y1",cy+v).attr("x2",cx+130).attr("y2",cy+v).attr("stroke","#eee").attr("stroke-width",0.8);
+    g.append("line").attr("x1",cx+v).attr("y1",cy-130).attr("x2",cx+v).attr("y2",cy+130).attr("stroke","#eee").attr("stroke-width",0.8);
+  }
+  // Axes
+  g.append("line").attr("x1",cx-130).attr("y1",cy).attr("x2",cx+130).attr("y2",cy).attr("stroke","#ccc").attr("stroke-width",1);
+  g.append("line").attr("x1",cx).attr("y1",cy+130).attr("x2",cx).attr("y2",cy-130).attr("stroke","#ccc").attr("stroke-width",1);
+
+  // Feature direction r_f
+  const defs = svg.append("defs");
+  defs.append("marker").attr("id","red-arr").attr("markerWidth",7).attr("markerHeight",5).attr("refX",6).attr("refY",2.5).attr("orient","auto")
+    .append("polygon").attr("points","0 0,7 2.5,0 5").attr("fill","#c04030");
+  defs.append("marker").attr("id","gray-arr").attr("markerWidth",6).attr("markerHeight",4).attr("refX",5).attr("refY",2).attr("orient","auto")
+    .append("polygon").attr("points","0 0,6 2,0 4").attr("fill","#999");
+
+  const rfx = 95, rfy = -75; // direction vector (unit scaled)
+  g.append("line").attr("x1",cx).attr("y1",cy).attr("x2",cx+rfx).attr("y2",cy+rfy)
+    .attr("stroke","#c04030").attr("stroke-width",2.5).attr("marker-end","url(#red-arr)");
+  g.append("text").attr("x",cx+rfx+6).attr("y",cy+rfy-5).attr("font-size","12px").attr("font-family","'Courier New',monospace").attr("fill","#c04030").text("rᶠ");
+
+  // Activation vectors + their projections onto r_f
+  const activations = [[60,-45],[85,-15],[50,-90],[-30,40],[-55,10],[-40,55]];
+  const rfMag = Math.sqrt(rfx*rfx+rfy*rfy);
+  const rfUnit = [rfx/rfMag, rfy/rfMag];
+
+  activations.forEach(([dx,dy], i) => {
+    const isPos = i < 3;
+    const col = isPos ? "#c04030" : "#4060a0";
+    // Draw activation point
+    g.append("circle").attr("cx",cx+dx).attr("cy",cy+dy).attr("r",5.5).attr("fill",col).attr("opacity",0.65);
+    // Projection onto rᶠ
+    const proj = dx*rfUnit[0] + dy*rfUnit[1];
+    const projX = cx + proj*rfUnit[0], projY = cy + proj*rfUnit[1];
+    // Dotted line from point to projection
+    g.append("line").attr("x1",cx+dx).attr("y1",cy+dy).attr("x2",projX).attr("y2",projY)
+      .attr("stroke",col).attr("stroke-width",0.9).attr("stroke-dasharray","3 2").attr("opacity",0.5);
+    // Tick on rᶠ line
+    const perpLen = 5;
+    const perpX = -rfUnit[1]*perpLen, perpY = rfUnit[0]*perpLen;
+    g.append("line").attr("x1",projX-perpX).attr("y1",projY-perpY).attr("x2",projX+perpX).attr("y2",projY+perpY)
+      .attr("stroke",col).attr("stroke-width",1.2).attr("opacity",0.8);
+  });
+
+  // Projection axis label
+  g.append("text").attr("x",cx-10).attr("y",cy+125).attr("font-size","10px").attr("font-family","'Courier New',monospace").attr("fill","#999").text("rᶠ·x > 0 → f present");
+
+  // Right panel
+  const rx = 350;
+  svg.append("text").attr("x",rx).attr("y",70).attr("font-size","11px").attr("fill","#555").text("Red dots: feature present");
+  svg.append("text").attr("x",rx).attr("y",88).attr("font-size","11px").attr("fill","#555").text("Blue dots: feature absent");
+  svg.append("text").attr("x",rx).attr("y",120).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#333").text("rᶠ · x ≈ value(f)");
+  svg.append("text").attr("x",rx).attr("y",150).attr("font-size","10px").attr("fill","#888").text("Dashes show projection");
+  svg.append("text").attr("x",rx).attr("y",167).attr("font-size","10px").attr("fill","#888").text("of each activation onto rᶠ");
+  svg.append("text").attr("x",rx).attr("y",200).attr("font-size","10px").attr("fill","#bbb").text("‖rᶠ‖ = 1  (unit vector)");
+
+  cap.textContent = "Feature direction rᶠ in activation space. Red activations (feature present) project positively onto rᶠ; blue (absent) project negatively. Dashed lines show projections.";
+}
+
+// ── linear subspace ───────────────────────────────────────
+function vizLinearSub(el, cap) {
+  const W=500, H=260;
+  const svg = makeSVG(el, W, H);
+  const cx=155, cy=130;
+  const g = svg.append("g");
+
+  // The subspace as a tilted parallelogram
+  const pts = [[cx-90,cy+40],[cx+70,cy+5],[cx+90,cy-40],[cx-70,cy-5]];
+  g.append("polygon").attr("points",pts.map(p=>p.join(",")).join(" ")).attr("fill","#dce8e4").attr("stroke","#6aaa90").attr("stroke-width",1.5);
+
+  // Basis vectors e₁ e₂
+  const defs = svg.append("defs");
+  defs.append("marker").attr("id","e1arr").attr("markerWidth",7).attr("markerHeight",5).attr("refX",6).attr("refY",2.5).attr("orient","auto")
+    .append("polygon").attr("points","0 0,7 2.5,0 5").attr("fill","#c04030");
+  defs.append("marker").attr("id","e2arr").attr("markerWidth",7).attr("markerHeight",5).attr("refX",6).attr("refY",2.5).attr("orient","auto")
+    .append("polygon").attr("points","0 0,7 2.5,0 5").attr("fill","#2060c0");
+
+  g.append("line").attr("x1",cx).attr("y1",cy).attr("x2",cx+75).attr("y2",cy-20)
+    .attr("stroke","#c04030").attr("stroke-width",2).attr("marker-end","url(#e1arr)");
+  g.append("text").attr("x",cx+78).attr("y",cy-23).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#c04030").text("e₁");
+
+  g.append("line").attr("x1",cx).attr("y1",cy).attr("x2",cx-60).attr("y2",cy-30)
+    .attr("stroke","#2060c0").attr("stroke-width",2).attr("marker-end","url(#e2arr)");
+  g.append("text").attr("x",cx-72).attr("y",cy-33).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#2060c0").text("e₂");
+
+  // Points in subspace
+  [[30,-10],[-20,-15],[50,5],[-40,2],[10,-25]].forEach(([dx,dy]) => {
+    g.append("circle").attr("cx",cx+dx).attr("cy",cy+dy).attr("r",4.5).attr("fill","#5a9a80").attr("opacity",0.7);
+  });
+
+  // Label V
+  g.append("text").attr("x",cx+20).attr("y",cy+30).attr("font-size","13px").attr("font-family","'Courier New',monospace").attr("font-weight","bold").attr("fill","#4a8a70").text("V");
+
+  // Right panel
+  const rx=330;
+  svg.append("text").attr("x",rx).attr("y",70).attr("font-size","12px").attr("font-weight","bold").attr("fill","#333").text("k-dim subspace:");
+  svg.append("text").attr("x",rx).attr("y",92).attr("font-size","11px").attr("font-family","'Courier New',monospace").attr("fill","#555").text("V = span{e₁,...,eₖ}");
+  svg.append("text").attr("x",rx).attr("y",125).attr("font-size","10.5px").attr("fill","#666").text("Example: «part of speech»");
+  svg.append("text").attr("x",rx).attr("y",143).attr("font-size","10.5px").attr("fill","#666").text("subspace in activation");
+  svg.append("text").attr("x",rx).attr("y",161).attr("font-size","10.5px").attr("fill","#666").text("space encodes noun /");
+  svg.append("text").attr("x",rx).attr("y",179).attr("font-size","10.5px").attr("fill","#666").text("verb / adj. classes.");
+  svg.append("text").attr("x",rx).attr("y",210).attr("font-size","10px").attr("fill","#aaa").text("Pᵥ x = projection onto V");
+
+  cap.textContent = "A k-dimensional linear subspace V = span{e₁,…,eₖ}. Green dots are activations; the subspace captures shared structure (e.g. syntactic category).";
+}
+
+// ── hypotheses overview ───────────────────────────────────
+function vizHypotheses(el, cap) {
+  const W=540, H=200;
+  const svg = makeSVG(el, W, H);
+
+  const items = [
+    { x:100, label:"LRH", sub:"features = linear\ndirections", col:"#9060d0" },
+    { x:270, label:"Superposition", sub:"more features\nthan neurons", col:"#c06030" },
+    { x:440, label:"Platonic Rep.", sub:"models converge\nto same repr.", col:"#2080c0" },
+  ];
+
+  items.forEach(({x, label, sub, col}) => {
+    svg.append("circle").attr("cx",x).attr("cy",90).attr("r",56).attr("fill","none").attr("stroke",col).attr("stroke-width",1.5).attr("opacity",0.5);
+    svg.append("text").attr("x",x).attr("y",82).attr("text-anchor","middle").attr("font-size","12px").attr("font-weight","bold").attr("fill",col).text(label);
+    sub.split("\n").forEach((line, i) => {
+      svg.append("text").attr("x",x).attr("y",99+i*14).attr("text-anchor","middle").attr("font-size","10px").attr("fill","#666").text(line);
+    });
+  });
+
+  // Connections (overlap)
+  svg.append("text").attr("x",185).attr("y",165).attr("text-anchor","middle").attr("font-size","9.5px").attr("fill","#aaa").text("linear structure ↔ separability");
+  svg.append("text").attr("x",355).attr("y",165).attr("text-anchor","middle").attr("font-size","9.5px").attr("fill","#aaa").text("universal structure?");
+
+  cap.textContent = "Three major hypotheses about LLM representations. LRH and Platonic Rep. are mutually reinforcing; Superposition challenges a naive LRH.";
+}
+
+// ── LRH: vector arithmetic diagram ───────────────────────
+function vizLRH(el, cap) {
+  const W=520, H=300;
+  const svg = makeSVG(el, W, H);
+  const cx=160, cy=160;
+  const g = svg.append("g");
+
+  // Grid
+  for (let v=-120; v<=120; v+=40) {
+    g.append("line").attr("x1",cx-130).attr("y1",cy+v).attr("x2",cx+130).attr("y2",cy+v).attr("stroke","#eee").attr("stroke-width",0.8);
+    g.append("line").attr("x1",cx+v).attr("y1",cy-130).attr("x2",cx+v).attr("y2",cy+130).attr("stroke","#eee").attr("stroke-width",0.8);
+  }
+  g.append("line").attr("x1",cx-130).attr("y1",cy).attr("x2",cx+130).attr("y2",cy).attr("stroke","#ccc").attr("stroke-width",1);
+  g.append("line").attr("x1",cx).attr("y1",cy+130).attr("x2",cx).attr("y2",cy-130).attr("stroke","#ccc").attr("stroke-width",1);
+
+  // Four points: man, king, woman, queen
+  // man at (-60, 30), king at (-60,-60), woman at (60,30), queen at (60,-60)
+  const man   = [cx-70, cy+40];
+  const king  = [cx-70, cy-60];
+  const woman = [cx+60, cy+40];
+  const queen = [cx+60, cy-60];
+
+  const defs = svg.append("defs");
+  function makeArr(id, col) {
+    defs.append("marker").attr("id",id).attr("markerWidth",7).attr("markerHeight",5).attr("refX",6).attr("refY",2.5).attr("orient","auto")
+      .append("polygon").attr("points","0 0,7 2.5,0 5").attr("fill",col);
+  }
+  makeArr("arr-gender","#9060d0");
+  makeArr("arr-royalty","#c06030");
+  makeArr("arr-result","#30a060");
+
+  // Gender arrows (man→woman, king→queen) — purple
+  [[man,woman],[king,queen]].forEach(([s,e]) => {
+    g.append("line").attr("x1",s[0]).attr("y1",s[1]).attr("x2",e[0]-4).attr("y2",e[1])
+      .attr("stroke","#9060d0").attr("stroke-width",1.8).attr("marker-end","url(#arr-gender)");
+  });
+
+  // Royalty arrows (man→king, woman→queen) — orange
+  [[man,king],[woman,queen]].forEach(([s,e]) => {
+    g.append("line").attr("x1",s[0]).attr("y1",s[1]).attr("x2",e[0]).attr("y2",e[1]+5)
+      .attr("stroke","#c06030").attr("stroke-width",1.8).attr("marker-end","url(#arr-royalty)");
+  });
+
+  // king - man + woman → queen (result arrow, dashed green)
+  g.append("line").attr("x1",king[0]).attr("y1",king[1]).attr("x2",queen[0]-4).attr("y2",queen[1])
+    .attr("stroke","#30a060").attr("stroke-width",2.5).attr("stroke-dasharray","6 3").attr("marker-end","url(#arr-result)");
+
+  // Dots
+  [[man,"man","#555"],[king,"king","#c06030"],[woman,"woman","#555"],[queen,"queen","#30a060"]].forEach(([pt,lbl,col]) => {
+    g.append("circle").attr("cx",pt[0]).attr("cy",pt[1]).attr("r",6).attr("fill",col).attr("stroke","white").attr("stroke-width",1.5);
+    g.append("text").attr("x",pt[0]).attr("y",pt[1]-12).attr("text-anchor","middle").attr("font-size","11px").attr("fill","#333").text(lbl);
+  });
+
+  // Legend
+  const lx=340, ly=80;
+  [[`#9060d0`,"gender direction"],[`#c06030`,"royalty direction"],[`#30a060`,"king−man+woman≈queen"]].forEach(([col,label],i) => {
+    svg.append("line").attr("x1",lx).attr("y1",ly+i*22).attr("x2",lx+24).attr("y2",ly+i*22).attr("stroke",col).attr("stroke-width",i===2?2.5:1.8).attr("stroke-dasharray",i===2?"6 3":null);
+    svg.append("text").attr("x",lx+30).attr("y",ly+i*22+4).attr("font-size","10.5px").attr("fill","#555").text(label);
+  });
+
+  // Formula
+  svg.append("text").attr("x",370).attr("y",200).attr("text-anchor","middle").attr("font-size","12px").attr("font-family","'Courier New',monospace").attr("fill","#30a060").text("king − man + woman");
+  svg.append("text").attr("x",370).attr("y",218).attr("text-anchor","middle").attr("font-size","12px").attr("font-family","'Courier New',monospace").attr("fill","#30a060").text("≈ queen");
+
+  cap.textContent = "Linear feature arithmetic (Word2Vec style): gender and royalty are linearly encoded directions. king − man + woman ≈ queen is a parallelogram in activation space.";
+}
+
+// ── platonic representation ───────────────────────────────
+function vizPlatonic(el, cap) {
+  const W=560, H=300;
+  const svg = makeSVG(el, W, H);
+
+  const models = [
+    { label:"Language Model (GPT)", cx:140, concepts:["dog","cat","tree","car","house"] },
+    { label:"Vision Model (ViT)",   cx:420, concepts:["dog","cat","tree","car","house"] },
+  ];
+
+  const conceptAngles = [0, 72, 144, 216, 288].map(d => d*Math.PI/180 - Math.PI/2);
+  const CR = 80;
+  const cy = 155;
+  const cols = ["#c04030","#4060a0","#50a060","#c08030","#9060d0"];
+
+  // Central CKA indicator
+  svg.append("text").attr("x",280).attr("y",100).attr("text-anchor","middle").attr("font-size","10.5px").attr("fill","#888").text("CKA similarity");
+  svg.append("text").attr("x",280).attr("y",116).attr("text-anchor","middle").attr("font-size","14px").attr("font-weight","bold").attr("fill","#30a060").text("0.87");
+  svg.append("text").attr("x",280).attr("y",136).attr("text-anchor","middle").attr("font-size","9px").attr("fill","#bbb").text("(after scaling)");
+
+  models.forEach(({label, cx, concepts}) => {
+    // Circle
+    svg.append("circle").attr("cx",cx).attr("cy",cy).attr("r",CR+20).attr("fill","none").attr("stroke","#ddd").attr("stroke-width",1.5);
+    svg.append("text").attr("x",cx).attr("y",cy+CR+38).attr("text-anchor","middle").attr("font-size","11px").attr("font-weight","bold").attr("fill","#444").text(label);
+
+    // Concepts
+    concepts.forEach((c, i) => {
+      const a = conceptAngles[i];
+      const x = cx + CR*Math.cos(a), y = cy + CR*Math.sin(a);
+      svg.append("circle").attr("cx",x).attr("cy",y).attr("r",6).attr("fill",cols[i]).attr("stroke","white").attr("stroke-width",1.5);
+      const lx = cx + (CR+16)*Math.cos(a), ly = cy + (CR+16)*Math.sin(a);
+      svg.append("text").attr("x",lx).attr("y",ly).attr("text-anchor","middle").attr("dominant-baseline","middle").attr("font-size","9.5px").attr("fill","#555").text(c);
+    });
+  });
+
+  // Connecting lines between same concepts
+  conceptAngles.forEach((a, i) => {
+    const x1 = 140+CR*Math.cos(a), y1 = cy+CR*Math.sin(a);
+    const x2 = 420+CR*Math.cos(a), y2 = cy+CR*Math.sin(a);
+    svg.append("line").attr("x1",x1).attr("y1",y1).attr("x2",x2).attr("y2",y2)
+      .attr("stroke",cols[i]).attr("stroke-width",1).attr("stroke-dasharray","4 3").attr("opacity",0.5);
+  });
+
+  cap.textContent = "Two models (language + vision) converge to similar geometric relationships between the same concepts — measured by CKA. This is the Platonic Representation (Huh et al., 2024).";
+}
+
+// ── viz dispatch map ──────────────────────────────────────
+const vizMap = {
+  manifolds:           vizManifolds,
+  torus:               vizTorus,
+  hyperbolic:          vizHyperbolic,
+  sphere:              vizSphere,
+  affine:              vizAffine,
+  linear_structures:   vizLinearStructures,
+  linear_sep:          vizLinearSep,
+  linear_dir:          vizLinearDir,
+  linear_sub:          vizLinearSub,
+  hypotheses:          vizHypotheses,
+  lrh:                 vizLRH,
+  platonic:            vizPlatonic,
+};
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+window.addEventListener("load", buildTree);
+window.addEventListener("resize", buildTree);
+</script>
+</body>
+</html>

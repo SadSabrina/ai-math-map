@@ -1,0 +1,44 @@
+id: gurnee-tegmark-2024-space-time
+title: "Language Models Represent Space and Time"
+authors:
+  - "Gurnee, W."
+  - "Tegmark, M."
+year: 2024
+arxiv: "2310.02207"
+code: "https://github.com/wesg52/world-models"
+
+structure:
+  type: manifolds/torus
+  description: >
+    Языковые модели кодируют пространственные (географические координаты)
+    и временные (дни недели, месяцы, годы) концепты как точки на многообразиях
+    в residual stream. Временные концепты — на торе (S¹ × S¹), пространственные
+    — на 2D-плоскости. Структура линейно декодируема из активаций.
+
+models:
+  - name: llama-2-7b
+    layer_range: [8, 22]
+    confirmed: true
+  - name: llama-2-13b
+    confirmed: true
+  - name: llama-2-70b
+    confirmed: true
+  - name: pythia-6.9b
+    confirmed: true
+
+methods:
+  - linear probing
+  - PCA
+  - activation patching
+
+keywords:
+  - world models
+  - torus
+  - space
+  - time
+  - cyclical structure
+  - linear representation
+
+submitted_by: sabrina
+reviewed_by: sabrina
+added: "2026-06-30"

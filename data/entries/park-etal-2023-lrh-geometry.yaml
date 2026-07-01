@@ -1,0 +1,41 @@
+id: park-etal-2023-lrh-geometry
+title: "The Linear Representation Hypothesis and the Geometry of Large Language Models"
+authors:
+  - "Park, K."
+  - "Choe, Y. J."
+  - "Veitch, V."
+year: 2023
+arxiv: "2311.03658"
+code: null
+
+structure:
+  type: hypotheses/lrh
+  description: >
+    Строгая формулировка Linear Representation Hypothesis: признаки кодируются
+    как линейные направления в activation space, и модель выполняет линейные
+    операции над ними (antonym = reflection, negation = negation). Авторы
+    вводят понятие «лжецов» (liars) — контрпримеров, когда линейный зонд
+    противоречит реальному поведению модели. Показывают: структура activation
+    space изоморфна логической структуре понятий в данных.
+
+models:
+  - name: llama-2-13b-chat
+    confirmed: true
+  - name: gpt-4
+    confirmed: true
+
+methods:
+  - linear probing
+  - causal interventions
+  - geometric analysis
+
+keywords:
+  - linear representation hypothesis
+  - geometry
+  - feature directions
+  - causality
+  - antonyms
+
+submitted_by: sabrina
+reviewed_by: sabrina
+added: "2026-06-30"

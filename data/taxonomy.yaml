@@ -1,0 +1,69 @@
+version: "0"
+updated: "2026-06-30"
+
+nodes:
+  - id: manifolds
+    label: "Manifolds"
+    label_ru: "Многообразия"
+    description: "Топологические и гладкие многообразия как структуры репрезентации в LLM"
+    type: category
+    children:
+      - id: manifolds-torus
+        label: "Torus"
+        label_ru: "Тор"
+        description: "Замкнутое многообразие S¹ × S¹ для кодирования циклических структур"
+        type: structure
+      - id: manifolds-hyperbolic
+        label: "Hyperbolic manifold"
+        label_ru: "Гиперболическое многообразие"
+        description: "Многообразие отрицательной кривизны; естественно кодирует иерархии"
+        type: structure
+      - id: manifolds-sphere
+        label: "Sphere"
+        label_ru: "Сфера / гиперсфера"
+        description: "Замкнутое однородное многообразие постоянной положительной кривизны"
+        type: structure
+      - id: manifolds-affine
+        label: "Affine subspace"
+        label_ru: "Аффинное подпространство"
+        description: "Плоское незамкнутое подпространство; граничный случай многообразия"
+        type: structure
+
+  - id: linear-structures
+    label: "Linear structures"
+    label_ru: "Линейные структуры"
+    description: "Структуры, основанные на линейной алгебре в пространстве активаций"
+    type: category
+    children:
+      - id: linear-separability
+        label: "Linear separability"
+        label_ru: "Линейная разделимость"
+        description: "Геометрическое свойство, лежащее в основе линейных репрезентаций признаков"
+        type: concept
+      - id: linear-direction
+        label: "Linear direction"
+        label_ru: "Линейное направление"
+        description: "Одномерное направление в activation space, кодирующее признак"
+        type: structure
+      - id: linear-subspace
+        label: "Linear subspace"
+        label_ru: "Линейное подпространство"
+        description: "Многомерное линейное подпространство для семантических кластеров"
+        type: structure
+
+  - id: hypotheses
+    label: "Hypotheses"
+    label_ru: "Гипотезы"
+    description: "Теоретические рамки, объясняющие природу репрезентаций в LLM"
+    type: category
+    children:
+      - id: lrh
+        label: "Linear Representation Hypothesis"
+        label_ru: "Гипотеза линейных репрезентаций"
+        description: "Признаки кодируются как линейные направления; линейные операции семантически осмысленны"
+        type: hypothesis
+      - id: platonic-representation
+        label: "Platonic Representation Hypothesis"
+        label_ru: "Гипотеза платонических репрезентаций"
+        description: "Разные модели сходятся к единой репрезентации реальности"
+        type: hypothesis
